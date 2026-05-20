@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TS Quiz Host</title>
+
+<style>
+
+body{
+margin:0;
+background:#051622;
+font-family:Arial;
+color:white;
+}
+
+.container{
+max-width:1000px;
+margin:auto;
+padding:30px;
+}
+
+.card{
+background:#0d2735;
+padding:30px;
+border-radius:24px;
+margin-top:30px;
+}
+
+button{
+width:100%;
+padding:20px;
+border:none;
+border-radius:18px;
+background:#03b2ff;
+color:#051622;
+font-size:22px;
+font-weight:bold;
+cursor:pointer;
+margin-top:20px;
+}
+
+.roomCode{
+font-size:80px;
+text-align:center;
+font-weight:bold;
+color:#03b2ff;
+margin:30px 0;
+}
+
+.player{
+background:#102c3d;
+padding:15px;
+border-radius:14px;
+margin-bottom:10px;
+font-size:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 style="text-align:center;font-size:60px;">
+TS Quiz Host
+</h1>
+
+<div class="card">
+
+<button onclick="createRoom()">
+CREAR SALA
+</button>
+
+<div id="roomArea" style="display:none;">
+
+<div class="roomCode" id="roomCode">
+000000
+</div>
+
+<h2>
+Jugadores conectados
+</h2>
+
+<div id="playersList"></div>
+
+</div>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+set,
+push,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBzMS3vAgZbvDpMoKGbALPcBl_oBIayDfc",
+
+authDomain: "ts-quiz-live.firebaseapp.com",
+
+databaseURL: "https://ts-quiz-live-default-rtdb.firebaseio.com",
+
+projectId: "ts-quiz-live",
+
+storageBucket: "ts-quiz-live.firebasestorage.app",
+
+messagingSenderId: "1008762047515",
+
+appId: "1:1008762047515:web:d848a84da0ef965ce1fcbe",
+
+measurementId: "G-MZENY9GPQ7"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+window.createRoom = function(){
+
+const code =
+Math.floor(100000 + Math.random() * 900000)
+.toString();
+
+set(ref(db,'rooms/' + code),{
+active:true
+});
+
+document.getElementById("roomArea")
+.style.display = "block";
+
+document.getElementById("roomCode")
+.innerHTML = code;
+
+listenPlayers(code);
+
+}
+
+function listenPlayers(code){
+
+const playersRef =
+ref(db,'rooms/' + code + '/players');
+
+onValue(playersRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+const list =
+document.getElementById("playersList");
+
+list.innerHTML = "";
+
+if(data){
+
+Object.values(data).forEach(player=>{
+
+list.innerHTML +=
+`
+<div class="player">
+👤 ${player.name}
+</div>
+`;
+
+});
+
+}
+
+});
+
+}
+
+</script>
+
+</body>
+
+</html>
