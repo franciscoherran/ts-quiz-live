@@ -1,304 +1,297 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2868
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+<!DOCTYPE html>
+<html lang="es">
 
-\f0\fs24 \cf0 <!DOCTYPE html>\
-<html lang="es">\
-\
-<head>\
-\
-<meta charset="UTF-8">\
-<meta name="viewport" content="width=device-width, initial-scale=1.0">\
-\
-<title>TS Quiz Live</title>\
-\
-<style>\
-\
-body\{\
-margin:0;\
-background:#051622;\
-font-family:Arial;\
-color:white;\
-\}\
-\
-.container\{\
-max-width:900px;\
-margin:auto;\
-padding:30px;\
-\}\
-\
-.card\{\
-background:#0d2735;\
-border-radius:24px;\
-padding:30px;\
-margin-top:40px;\
-\}\
-\
-h1\{\
-text-align:center;\
-font-size:54px;\
-margin-bottom:10px;\
-\}\
-\
-.subtitle\{\
-text-align:center;\
-color:#88cbe7;\
-margin-bottom:35px;\
-\}\
-\
-input\{\
-width:100%;\
-padding:20px;\
-border:none;\
-border-radius:18px;\
-background:#102c3d;\
-color:white;\
-font-size:20px;\
-margin-bottom:20px;\
-box-sizing:border-box;\
-\}\
-\
-button\{\
-width:100%;\
-padding:20px;\
-border:none;\
-border-radius:18px;\
-background:#03b2ff;\
-color:#051622;\
-font-size:20px;\
-font-weight:bold;\
-cursor:pointer;\
-\}\
-\
-.player\{\
-background:#102c3d;\
-padding:15px;\
-border-radius:14px;\
-margin-bottom:12px;\
-display:flex;\
-justify-content:space-between;\
-font-size:20px;\
-\}\
-\
-.roomCode\{\
-font-size:70px;\
-font-weight:bold;\
-text-align:center;\
-margin:30px 0;\
-color:#03b2ff;\
-letter-spacing:8px;\
-\}\
-\
-.small\{\
-text-align:center;\
-color:#88cbe7;\
-margin-top:15px;\
-\}\
-\
-</style>\
-\
-</head>\
-\
-<body>\
-\
-<div class="container">\
-\
-<h1>TS Quiz Live</h1>\
-\
-<div class="subtitle">\
-Sistema Multijugador B\'edblico\
-</div>\
-\
-<!-- HOST -->\
-\
-<div class="card">\
-\
-<h2>Crear Sala</h2>\
-\
-<button onclick="createRoom()">\
-CREAR SALA\
-</button>\
-\
-<div id="roomArea" style="display:none;">\
-\
-<div class="roomCode" id="roomCode">\
-000000\
-</div>\
-\
-<div class="small">\
-Los jugadores deben ingresar este c\'f3digo\
-</div>\
-\
-<h3 style="margin-top:40px;">\
-Jugadores conectados\
-</h3>\
-\
-<div id="playersList"></div>\
-\
-</div>\
-\
-</div>\
-\
-<!-- PLAYER -->\
-\
-<div class="card">\
-\
-<h2>Entrar a Sala</h2>\
-\
-<input id="playerName" placeholder="Tu nombre">\
-\
-<input id="joinCode" placeholder="C\'f3digo sala">\
-\
-<button onclick="joinRoom()">\
-ENTRAR\
-</button>\
-\
-<div id="joinStatus" class="small"></div>\
-\
-</div>\
-\
-</div>\
-\
-<!-- FIREBASE -->\
-\
-<script type="module">\
-\
-import \{ initializeApp \}\
-from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";\
-\
-import \{\
-getDatabase,\
-ref,\
-set,\
-push,\
-onValue\
-\}\
-from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";\
-\
-const firebaseConfig = \{\
-\
-apiKey: "AIzaSyBzMS3vAgZbvDpMoKGbALPcBl_oBIayDfc",\
-\
-authDomain: "ts-quiz-live.firebaseapp.com",\
-\
-databaseURL: "https://ts-quiz-live-default-rtdb.firebaseio.com",\
-\
-projectId: "ts-quiz-live",\
-\
-storageBucket: "ts-quiz-live.firebasestorage.app",\
-\
-messagingSenderId: "1008762047515",\
-\
-appId: "1:1008762047515:web:d848a84da0ef965ce1fcbe",\
-\
-measurementId: "G-MZENY9GPQ7"\
-\
-\};\
-\
-const app = initializeApp(firebaseConfig);\
-\
-const db = getDatabase(app);\
-\
-let currentRoom = null;\
-\
-window.createRoom = function()\{\
-\
-const code =\
-Math.floor(100000 + Math.random() * 900000)\
-.toString();\
-\
-currentRoom = code;\
-\
-set(ref(db,'rooms/' + code),\{\
-created:true\
-\});\
-\
-document.getElementById("roomArea")\
-.style.display = "block";\
-\
-document.getElementById("roomCode")\
-.innerHTML = code;\
-\
-listenPlayers(code);\
-\
-\}\
-\
-window.joinRoom = function()\{\
-\
-const name =\
-document.getElementById("playerName").value;\
-\
-const code =\
-document.getElementById("joinCode").value;\
-\
-if(name.trim() === "")\{\
-\
-alert("Ingresa tu nombre");\
-\
-return;\
-\
-\}\
-\
-const playerRef =\
-push(ref(db,'rooms/' + code + '/players'));\
-\
-set(playerRef,\{\
-name:name,\
-score:0\
-\});\
-\
-document.getElementById("joinStatus")\
-.innerHTML =\
-"\uc0\u9989  Conectado a la sala " + code;\
-\
-\}\
-\
-function listenPlayers(code)\{\
-\
-const playersRef =\
-ref(db,'rooms/' + code + '/players');\
-\
-onValue(playersRef,(snapshot)=>\{\
-\
-const data = snapshot.val();\
-\
-const list =\
-document.getElementById("playersList");\
-\
-list.innerHTML = "";\
-\
-if(data)\{\
-\
-Object.values(data).forEach(player=>\{\
-\
-list.innerHTML +=\
-`\
-<div class="player">\
-\
-<div>\
-\uc0\u55357 \u56420  $\{player.name\}\
-</div>\
-\
-<div>\
-$\{player.score\}\
-</div>\
-\
-</div>\
-`;\
-\
-\});\
-\
-\}\
-\
-\});\
-\
-\}\
-\
-</script>\
-\
-</body>\
-\
-</html>}
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TS Quiz Live</title>
+
+<style>
+
+body{
+margin:0;
+background:#051622;
+font-family:Arial;
+color:white;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:30px;
+}
+
+.card{
+background:#0d2735;
+border-radius:24px;
+padding:30px;
+margin-top:40px;
+}
+
+h1{
+text-align:center;
+font-size:54px;
+margin-bottom:10px;
+}
+
+.subtitle{
+text-align:center;
+color:#88cbe7;
+margin-bottom:35px;
+}
+
+input{
+width:100%;
+padding:20px;
+border:none;
+border-radius:18px;
+background:#102c3d;
+color:white;
+font-size:20px;
+margin-bottom:20px;
+box-sizing:border-box;
+}
+
+button{
+width:100%;
+padding:20px;
+border:none;
+border-radius:18px;
+background:#03b2ff;
+color:#051622;
+font-size:20px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.player{
+background:#102c3d;
+padding:15px;
+border-radius:14px;
+margin-bottom:12px;
+display:flex;
+justify-content:space-between;
+font-size:20px;
+}
+
+.roomCode{
+font-size:70px;
+font-weight:bold;
+text-align:center;
+margin:30px 0;
+color:#03b2ff;
+letter-spacing:8px;
+}
+
+.small{
+text-align:center;
+color:#88cbe7;
+margin-top:15px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>TS Quiz Live</h1>
+
+<div class="subtitle">
+Sistema Multijugador Bíblico
+</div>
+
+<!-- HOST -->
+
+<div class="card">
+
+<h2>Crear Sala</h2>
+
+<button onclick="createRoom()">
+CREAR SALA
+</button>
+
+<div id="roomArea" style="display:none;">
+
+<div class="roomCode" id="roomCode">
+000000
+</div>
+
+<div class="small">
+Los jugadores deben ingresar este código
+</div>
+
+<h3 style="margin-top:40px;">
+Jugadores conectados
+</h3>
+
+<div id="playersList"></div>
+
+</div>
+
+</div>
+
+<!-- PLAYER -->
+
+<div class="card">
+
+<h2>Entrar a Sala</h2>
+
+<input id="playerName" placeholder="Tu nombre">
+
+<input id="joinCode" placeholder="Código sala">
+
+<button onclick="joinRoom()">
+ENTRAR
+</button>
+
+<div id="joinStatus" class="small"></div>
+
+</div>
+
+</div>
+
+<!-- FIREBASE -->
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+set,
+push,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBzMS3vAgZbvDpMoKGbALPcBl_oBIayDfc",
+
+authDomain: "ts-quiz-live.firebaseapp.com",
+
+databaseURL: "https://ts-quiz-live-default-rtdb.firebaseio.com",
+
+projectId: "ts-quiz-live",
+
+storageBucket: "ts-quiz-live.firebasestorage.app",
+
+messagingSenderId: "1008762047515",
+
+appId: "1:1008762047515:web:d848a84da0ef965ce1fcbe",
+
+measurementId: "G-MZENY9GPQ7"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+let currentRoom = null;
+
+window.createRoom = function(){
+
+const code =
+Math.floor(100000 + Math.random() * 900000)
+.toString();
+
+currentRoom = code;
+
+set(ref(db,'rooms/' + code),{
+created:true
+});
+
+document.getElementById("roomArea")
+.style.display = "block";
+
+document.getElementById("roomCode")
+.innerHTML = code;
+
+listenPlayers(code);
+
+}
+
+window.joinRoom = function(){
+
+const name =
+document.getElementById("playerName").value;
+
+const code =
+document.getElementById("joinCode").value;
+
+if(name.trim() === ""){
+
+alert("Ingresa tu nombre");
+
+return;
+
+}
+
+const playerRef =
+push(ref(db,'rooms/' + code + '/players'));
+
+set(playerRef,{
+name:name,
+score:0
+});
+
+document.getElementById("joinStatus")
+.innerHTML =
+"✅ Conectado a la sala " + code;
+
+}
+
+function listenPlayers(code){
+
+const playersRef =
+ref(db,'rooms/' + code + '/players');
+
+onValue(playersRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+const list =
+document.getElementById("playersList");
+
+list.innerHTML = "";
+
+if(data){
+
+Object.values(data).forEach(player=>{
+
+list.innerHTML +=
+`
+<div class="player">
+
+<div>
+👤 ${player.name}
+</div>
+
+<div>
+${player.score}
+</div>
+
+</div>
+`;
+
+});
+
+}
+
+});
+
+}
+
+</script>
+
+</body>
+
+</html>
