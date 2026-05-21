@@ -102,6 +102,13 @@ transition:0.2s;
 transform:scale(1.02);
 }
 
+.waiting{
+text-align:center;
+margin-top:20px;
+font-size:22px;
+color:#03b2ff;
+}
+
 </style>
 
 </head>
@@ -149,6 +156,13 @@ Esperando pregunta...
 
 <div id="answers"></div>
 
+<div
+id="waiting"
+class="waiting"
+style="display:none;">
+✅ Respuesta enviada
+</div>
+
 </div>
 
 </div>
@@ -192,6 +206,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 let currentRoom = "";
+let playerName = "";
+let answered = false;
 
 window.joinRoom = function(){
 
@@ -217,6 +233,7 @@ return;
 
 }
 
+playerName = name;
 currentRoom = code;
 
 const playerRef =
@@ -252,6 +269,11 @@ const data = snapshot.val();
 
 if(data){
 
+answered = false;
+
+document.getElementById("waiting")
+.style.display = "none";
+
 showQuestion(data);
 
 }
@@ -285,7 +307,7 @@ answers.innerHTML +=
 <div
 class="answer"
 style="background:${colors[index]}"
-onclick="answerQuestion()"
+onclick="answerQuestion(${index})"
 >
 ${answer}
 </div>
@@ -295,9 +317,33 @@ ${answer}
 
 }
 
-window.answerQuestion = function(){
+window.answerQuestion = function(index){
 
-alert("✅ Respuesta enviada");
+if(answered) return;
+
+answered = true;
+
+set(
+push(
+ref(
+db,
+'rooms/' +
+currentRoom +
+'/responses'
+)
+),
+{
+player:playerName,
+answer:index,
+time:Date.now()
+}
+);
+
+document.getElementById("answers")
+.innerHTML = "";
+
+document.getElementById("waiting")
+.style.display = "block";
 
 }
 
