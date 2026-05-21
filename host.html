@@ -41,6 +41,7 @@ font-size:22px;
 font-weight:bold;
 cursor:pointer;
 margin-top:20px;
+cursor:pointer;
 }
 
 .roomCode{
@@ -80,16 +81,6 @@ font-size:20px;
 background:#00c853 !important;
 }
 
-.response{
-background:#102c3d;
-padding:15px;
-border-radius:14px;
-margin-bottom:10px;
-display:flex;
-justify-content:space-between;
-font-size:18px;
-}
-
 .counter{
 margin-top:25px;
 font-size:28px;
@@ -108,8 +99,28 @@ justify-content:space-between;
 font-size:22px;
 }
 
-h2{
-margin-top:35px;
+.timerBox{
+margin-top:25px;
+text-align:center;
+font-size:70px;
+font-weight:bold;
+color:#03b2ff;
+}
+
+.timeBar{
+width:100%;
+height:20px;
+background:#102c3d;
+border-radius:20px;
+overflow:hidden;
+margin-top:15px;
+}
+
+.timeFill{
+height:100%;
+width:100%;
+background:#03b2ff;
+transition:1s linear;
 }
 
 </style>
@@ -145,6 +156,19 @@ Jugadores conectados
 <button onclick="nextQuestion()">
 SIGUIENTE PREGUNTA
 </button>
+
+<div class="timerBox">
+<span id="timer">
+15
+</span>
+</div>
+
+<div class="timeBar">
+<div
+id="timeFill"
+class="timeFill">
+</div>
+</div>
 
 <div id="questionBox">
 Pregunta aparecerá aquí
@@ -249,6 +273,8 @@ correct:2
 
 let currentQuestion = 0;
 let currentRoom = "";
+let timer = 15;
+let interval;
 
 window.createRoom = function(){
 
@@ -273,6 +299,66 @@ listenPlayers(code);
 listenResponses(code);
 
 showQuestion();
+
+}
+
+function startTimer(){
+
+clearInterval(interval);
+
+timer = 15;
+
+document.getElementById("timer")
+.innerHTML = timer;
+
+document.getElementById("timeFill")
+.style.width = "100%";
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:timer,
+active:true
+}
+);
+
+interval = setInterval(()=>{
+
+timer--;
+
+document.getElementById("timer")
+.innerHTML = timer;
+
+const percent =
+(timer / 15) * 100;
+
+document.getElementById("timeFill")
+.style.width =
+percent + "%";
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:timer,
+active:true
+}
+);
+
+if(timer <= 0){
+
+clearInterval(interval);
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:0,
+active:false
+}
+);
+
+}
+
+},1000);
 
 }
 
@@ -362,6 +448,8 @@ currentRoom +
 ),
 q
 );
+
+startTimer();
 
 }
 
