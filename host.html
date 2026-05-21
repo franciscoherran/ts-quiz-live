@@ -41,7 +41,6 @@ font-size:22px;
 font-weight:bold;
 cursor:pointer;
 margin-top:20px;
-cursor:pointer;
 }
 
 .roomCode{
@@ -123,6 +122,13 @@ background:#03b2ff;
 transition:1s linear;
 }
 
+.loading{
+text-align:center;
+font-size:30px;
+margin-top:30px;
+color:#88cbe7;
+}
+
 </style>
 
 </head>
@@ -140,6 +146,12 @@ TS Quiz Host
 <button onclick="createRoom()">
 CREAR SALA
 </button>
+
+<div
+id="loading"
+class="loading">
+Cargando preguntas...
+</div>
 
 <div id="roomArea" style="display:none;">
 
@@ -234,49 +246,42 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
-const questions = [
-
-{
-question:"¿Quién construyó el arca?",
-answers:[
-"Noé",
-"Moisés",
-"David",
-"Pedro"
-],
-correct:0
-},
-
-{
-question:"¿Quién derrotó a Goliat?",
-answers:[
-"David",
-"Pablo",
-"Juan",
-"Samuel"
-],
-correct:0
-},
-
-{
-question:"¿Cuántos días ayunó Jesús?",
-answers:[
-"7",
-"14",
-"40",
-"50"
-],
-correct:2
-}
-
-];
+let questions = [];
 
 let currentQuestion = 0;
 let currentRoom = "";
 let timer = 15;
 let interval;
 
+loadQuestions();
+
+async function loadQuestions(){
+
+const snapshot =
+await get(ref(db,'questions'));
+
+const data = snapshot.val();
+
+if(data){
+
+questions = Object.values(data);
+
+document.getElementById("loading")
+.style.display = "none";
+
+}
+
+}
+
 window.createRoom = function(){
+
+if(questions.length === 0){
+
+alert("No hay preguntas");
+
+return;
+
+}
 
 const code =
 Math.floor(100000 + Math.random() * 900000)
