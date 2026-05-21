@@ -59,6 +59,23 @@ margin-bottom:10px;
 font-size:20px;
 }
 
+#questionBox{
+margin-top:30px;
+background:#102c3d;
+padding:25px;
+border-radius:20px;
+font-size:28px;
+text-align:center;
+}
+
+.answer{
+background:#16384d;
+padding:15px;
+border-radius:14px;
+margin-top:12px;
+font-size:20px;
+}
+
 </style>
 
 </head>
@@ -89,6 +106,16 @@ Jugadores conectados
 
 <div id="playersList"></div>
 
+<button onclick="nextQuestion()">
+SIGUIENTE PREGUNTA
+</button>
+
+<div id="questionBox">
+Pregunta aparecerá aquí
+</div>
+
+<div id="answersBox"></div>
+
 </div>
 
 </div>
@@ -104,7 +131,6 @@ import {
 getDatabase,
 ref,
 set,
-push,
 onValue
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
@@ -133,11 +159,50 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
+const questions = [
+
+{
+question:"¿Quién construyó el arca?",
+answers:[
+"Noé",
+"Moisés",
+"David",
+"Pedro"
+]
+},
+
+{
+question:"¿Quién derrotó a Goliat?",
+answers:[
+"David",
+"Pablo",
+"Juan",
+"Samuel"
+]
+},
+
+{
+question:"¿Cuántos días ayunó Jesús?",
+answers:[
+"7",
+"14",
+"40",
+"50"
+]
+}
+
+];
+
+let currentQuestion = 0;
+let currentRoom = "";
+
 window.createRoom = function(){
 
 const code =
 Math.floor(100000 + Math.random() * 900000)
 .toString();
+
+currentRoom = code;
 
 set(ref(db,'rooms/' + code),{
 active:true
@@ -150,6 +215,8 @@ document.getElementById("roomCode")
 .innerHTML = code;
 
 listenPlayers(code);
+
+showQuestion();
 
 }
 
@@ -183,6 +250,57 @@ list.innerHTML +=
 }
 
 });
+
+}
+
+function showQuestion(){
+
+const q =
+questions[currentQuestion];
+
+document.getElementById("questionBox")
+.innerHTML =
+q.question;
+
+const answersBox =
+document.getElementById("answersBox");
+
+answersBox.innerHTML = "";
+
+q.answers.forEach(answer=>{
+
+answersBox.innerHTML +=
+`
+<div class="answer">
+${answer}
+</div>
+`;
+
+});
+
+set(
+ref(
+db,
+'rooms/' +
+currentRoom +
+'/game'
+),
+q
+);
+
+}
+
+window.nextQuestion = function(){
+
+currentQuestion++;
+
+if(currentQuestion >= questions.length){
+
+currentQuestion = 0;
+
+}
+
+showQuestion();
 
 }
 
