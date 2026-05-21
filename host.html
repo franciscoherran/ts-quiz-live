@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TS Quiz Host PRO</title>
+<title>TS Quiz PRO MAX</title>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
@@ -22,7 +22,7 @@ overflow-x:hidden;
 }
 
 .container{
-max-width:1100px;
+max-width:1200px;
 margin:auto;
 padding:30px;
 }
@@ -85,7 +85,7 @@ animation:slideUp 0.4s;
 
 #questionImage{
 width:100%;
-max-height:400px;
+max-height:420px;
 object-fit:cover;
 border-radius:24px;
 margin-top:30px;
@@ -98,7 +98,7 @@ margin-top:30px;
 background:#102c3d;
 padding:25px;
 border-radius:20px;
-font-size:28px;
+font-size:30px;
 text-align:center;
 animation:fade 0.5s;
 }
@@ -108,7 +108,7 @@ background:#16384d;
 padding:15px;
 border-radius:14px;
 margin-top:12px;
-font-size:20px;
+font-size:22px;
 animation:slideUp 0.3s;
 }
 
@@ -133,6 +133,34 @@ display:flex;
 justify-content:space-between;
 font-size:22px;
 animation:slideUp 0.4s;
+}
+
+.teamLeader{
+padding:20px;
+border-radius:18px;
+margin-bottom:15px;
+font-size:24px;
+font-weight:bold;
+display:flex;
+justify-content:space-between;
+animation:slideUp 0.5s;
+}
+
+.teamAzul{
+background:#1976d2;
+}
+
+.teamRojo{
+background:#d32f2f;
+}
+
+.teamVerde{
+background:#2e7d32;
+}
+
+.teamAmarillo{
+background:#fdd835;
+color:#051622;
 }
 
 .timerBox{
@@ -236,6 +264,28 @@ margin-bottom:15px;
 font-size:28px;
 }
 
+.statsGrid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+margin-top:30px;
+}
+
+.statCard{
+background:#102c3d;
+padding:25px;
+border-radius:20px;
+text-align:center;
+animation:fade 0.5s;
+}
+
+.statNumber{
+font-size:48px;
+font-weight:bold;
+color:#03b2ff;
+margin-top:10px;
+}
+
 @keyframes fade{
 from{
 opacity:0;
@@ -276,7 +326,7 @@ opacity:1;
 <div class="container">
 
 <h1 style="text-align:center;font-size:60px;">
-TS Quiz PRO
+TS Quiz PRO MAX
 </h1>
 
 <div class="card">
@@ -303,11 +353,42 @@ Escanea para entrar al juego
 
 <div id="qrcode"></div>
 
+<div class="statsGrid">
+
+<div class="statCard">
+<div>👥 Jugadores</div>
+<div id="playersCount" class="statNumber">
+0
+</div>
+</div>
+
+<div class="statCard">
+<div>✅ Respuestas</div>
+<div id="answersCount" class="statNumber">
+0
+</div>
+</div>
+
+<div class="statCard">
+<div>🏆 Pregunta</div>
+<div id="questionCount" class="statNumber">
+1
+</div>
+</div>
+
+</div>
+
 <h2 style="margin-top:40px;">
-Jugadores conectados
+👥 Jugadores conectados
 </h2>
 
 <div id="playersList"></div>
+
+<h2 style="margin-top:40px;">
+🏆 Ranking Equipos
+</h2>
+
+<div id="teamsLeaderboard"></div>
 
 <button onclick="nextQuestion()">
 SIGUIENTE PREGUNTA
@@ -343,7 +424,7 @@ class="counter">
 </div>
 
 <h2>
-Leaderboard
+🏅 Leaderboard Individual
 </h2>
 
 <div id="leaderboard"></div>
@@ -523,6 +604,14 @@ document.getElementById("timer")
 document.getElementById("timeFill")
 .style.width = "100%";
 
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:timer,
+active:true
+}
+);
+
 interval = setInterval(()=>{
 
 timer--;
@@ -536,6 +625,14 @@ const percent =
 document.getElementById("timeFill")
 .style.width =
 percent + "%";
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:timer,
+active:true
+}
+);
 
 if(timer <= 5){
 
@@ -554,6 +651,14 @@ document.getElementById("timer")
 if(timer <= 0){
 
 clearInterval(interval);
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:0,
+active:false
+}
+);
 
 }
 
@@ -577,20 +682,93 @@ list.innerHTML = "";
 
 if(data){
 
+document.getElementById("playersCount")
+.innerHTML =
+Object.keys(data).length;
+
 Object.values(data).forEach((player)=>{
 
 list.innerHTML +=
 `
 <div class="player">
-👤 ${player.name} — ${player.score || 0} pts
+👤 ${player.name}
+— ${player.team || "Sin equipo"}
+— ${player.score || 0} pts
 </div>
 `;
 
 });
 
 showLeaderboard(data);
+showTeamsLeaderboard(data);
 
 }
+
+});
+
+}
+
+function showTeamsLeaderboard(players){
+
+const teams = {
+Azul:0,
+Rojo:0,
+Verde:0,
+Amarillo:0
+};
+
+Object.values(players).forEach(player=>{
+
+if(player.team){
+
+teams[player.team] +=
+player.score || 0;
+
+}
+
+});
+
+const board =
+document.getElementById("teamsLeaderboard");
+
+board.innerHTML = "";
+
+Object.entries(teams)
+.sort((a,b)=>b[1]-a[1])
+.forEach(([team,score])=>{
+
+let className = "";
+
+if(team === "Azul"){
+className = "teamAzul";
+}
+
+if(team === "Rojo"){
+className = "teamRojo";
+}
+
+if(team === "Verde"){
+className = "teamVerde";
+}
+
+if(team === "Amarillo"){
+className = "teamAmarillo";
+}
+
+board.innerHTML +=
+`
+<div class="teamLeader ${className}">
+
+<div>
+🏆 Equipo ${team}
+</div>
+
+<div>
+${score} pts
+</div>
+
+</div>
+`;
 
 });
 
@@ -606,6 +784,10 @@ currentRoom +
 '/responses'
 )
 );
+
+document.getElementById("questionCount")
+.innerHTML =
+currentQuestion + 1;
 
 const q =
 questions[currentQuestion];
@@ -694,6 +876,10 @@ let total = 0;
 
 if(data){
 
+document.getElementById("answersCount")
+.innerHTML =
+Object.keys(data).length;
+
 const playersSnap =
 await get(
 ref(db,'rooms/' + code + '/players')
@@ -759,7 +945,7 @@ Object.values(players)
 (b.score || 0) - (a.score || 0)
 );
 
-sorted.slice(0,5).forEach((player,index)=>{
+sorted.slice(0,10).forEach((player,index)=>{
 
 leaderboard.innerHTML +=
 `
