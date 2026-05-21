@@ -413,6 +413,21 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
+const tickSound =
+new Audio(
+"https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
+);
+
+const winSound =
+new Audio(
+"https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg"
+);
+
+const podiumSound =
+new Audio(
+"https://actions.google.com/sounds/v1/crowds/applause.ogg"
+);
+
 let questions = [];
 
 let currentQuestion = 0;
@@ -515,6 +530,12 @@ time:timer,
 active:true
 }
 );
+
+if(timer <= 5 && timer > 0){
+
+tickSound.play();
+
+}
 
 if(timer <= 0){
 
@@ -669,6 +690,8 @@ questions[currentQuestion];
 
 if(response.answer === q.correct){
 
+winSound.play();
+
 Object.entries(players).forEach(([id,player])=>{
 
 if(player.name === response.player){
@@ -757,6 +780,8 @@ Object.values(players)
 
 document.getElementById("podium")
 .style.display = "block";
+
+podiumSound.play();
 
 if(sorted[0]){
 
