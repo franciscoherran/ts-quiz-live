@@ -18,15 +18,17 @@ color:white;
 display:flex;
 justify-content:center;
 align-items:center;
-height:100vh;
+min-height:100vh;
+padding:20px;
+box-sizing:border-box;
 }
 
 .card{
 background:#0d2735;
 padding:35px;
 border-radius:24px;
-width:90%;
-max-width:450px;
+width:100%;
+max-width:500px;
 }
 
 h1{
@@ -63,6 +65,7 @@ color:#051622;
 font-size:20px;
 font-weight:bold;
 cursor:pointer;
+margin-top:10px;
 }
 
 .status{
@@ -72,6 +75,33 @@ color:#88cbe7;
 font-size:18px;
 }
 
+#gameArea{
+display:none;
+}
+
+.question{
+font-size:30px;
+font-weight:bold;
+margin-bottom:25px;
+text-align:center;
+line-height:1.4;
+}
+
+.answer{
+padding:20px;
+border-radius:18px;
+margin-bottom:15px;
+font-size:20px;
+font-weight:bold;
+cursor:pointer;
+text-align:center;
+transition:0.2s;
+}
+
+.answer:hover{
+transform:scale(1.02);
+}
+
 </style>
 
 </head>
@@ -79,6 +109,8 @@ font-size:18px;
 <body>
 
 <div class="card">
+
+<div id="joinArea">
 
 <h1>TS Quiz</h1>
 
@@ -107,6 +139,20 @@ class="status">
 
 </div>
 
+<div id="gameArea">
+
+<div
+id="question"
+class="question">
+Esperando pregunta...
+</div>
+
+<div id="answers"></div>
+
+</div>
+
+</div>
+
 <script type="module">
 
 import { initializeApp }
@@ -116,7 +162,8 @@ import {
 getDatabase,
 ref,
 push,
-set
+set,
+onValue
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
@@ -144,6 +191,8 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
+let currentRoom = "";
+
 window.joinRoom = function(){
 
 const name =
@@ -168,6 +217,8 @@ return;
 
 }
 
+currentRoom = code;
+
 const playerRef =
 push(ref(db,'rooms/' + code + '/players'));
 
@@ -178,7 +229,75 @@ score:0
 
 document.getElementById("status")
 .innerHTML =
-"✅ Conectado a sala " + code;
+"✅ Conectado";
+
+document.getElementById("joinArea")
+.style.display = "none";
+
+document.getElementById("gameArea")
+.style.display = "block";
+
+listenGame(code);
+
+}
+
+function listenGame(code){
+
+const gameRef =
+ref(db,'rooms/' + code + '/game');
+
+onValue(gameRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+if(data){
+
+showQuestion(data);
+
+}
+
+});
+
+}
+
+function showQuestion(data){
+
+document.getElementById("question")
+.innerHTML =
+data.question;
+
+const answers =
+document.getElementById("answers");
+
+answers.innerHTML = "";
+
+const colors = [
+"#ff4d4d",
+"#3b82f6",
+"#22c55e",
+"#f59e0b"
+];
+
+data.answers.forEach((answer,index)=>{
+
+answers.innerHTML +=
+`
+<div
+class="answer"
+style="background:${colors[index]}"
+onclick="answerQuestion()"
+>
+${answer}
+</div>
+`;
+
+});
+
+}
+
+window.answerQuestion = function(){
+
+alert("✅ Respuesta enviada");
 
 }
 
