@@ -15,32 +15,19 @@ margin:0;
 background:#051622;
 font-family:Arial;
 color:white;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
 padding:20px;
-box-sizing:border-box;
+}
+
+.container{
+max-width:700px;
+margin:auto;
 }
 
 .card{
 background:#0d2735;
-padding:35px;
+padding:25px;
 border-radius:24px;
-width:100%;
-max-width:500px;
-}
-
-h1{
-text-align:center;
-font-size:42px;
-margin-bottom:10px;
-}
-
-.subtitle{
-text-align:center;
-color:#88cbe7;
-margin-bottom:30px;
+margin-top:20px;
 }
 
 input{
@@ -50,8 +37,8 @@ border:none;
 border-radius:18px;
 background:#102c3d;
 color:white;
-font-size:18px;
-margin-bottom:18px;
+font-size:20px;
+margin-bottom:15px;
 box-sizing:border-box;
 }
 
@@ -62,72 +49,73 @@ border:none;
 border-radius:18px;
 background:#03b2ff;
 color:#051622;
-font-size:20px;
+font-size:22px;
 font-weight:bold;
 cursor:pointer;
 margin-top:10px;
+transition:0.2s;
 }
 
-.status{
-margin-top:20px;
-text-align:center;
-color:#88cbe7;
-font-size:18px;
+button:hover{
+transform:scale(1.01);
 }
 
-#gameArea{
+#questionImage{
+width:100%;
+max-height:320px;
+object-fit:cover;
+border-radius:20px;
+margin-bottom:20px;
 display:none;
 }
 
 .question{
 font-size:30px;
-font-weight:bold;
+text-align:center;
 margin-bottom:25px;
-text-align:center;
-line-height:1.4;
 }
 
-.answer{
-padding:20px;
-border-radius:18px;
-margin-bottom:15px;
-font-size:20px;
+.answerBtn{
+margin-top:15px;
+background:#16384d;
+color:white;
+}
+
+.answerBtn:hover{
+background:#1f4c66;
+}
+
+.timer{
+margin-top:20px;
+text-align:center;
+font-size:60px;
 font-weight:bold;
-cursor:pointer;
-text-align:center;
-transition:0.2s;
-}
-
-.answer:hover{
-transform:scale(1.02);
+color:#03b2ff;
 }
 
 .waiting{
 text-align:center;
-margin-top:20px;
-font-size:22px;
-color:#03b2ff;
+font-size:30px;
+margin-top:40px;
+color:#88cbe7;
 }
 
-.timer{
+.success{
+background:#00c853 !important;
+color:#051622 !important;
+}
+
+.error{
+background:#ff5252 !important;
+color:white !important;
+}
+
+.playerName{
 text-align:center;
-font-size:60px;
-font-weight:bold;
-margin-bottom:20px;
-color:#03b2ff;
-}
-
-.timeOver{
-text-align:center;
-font-size:26px;
+font-size:28px;
 margin-top:20px;
-color:#ff4d4d;
+color:#03b2ff;
 font-weight:bold;
-}
-
-.disabled{
-opacity:0.4;
-pointer-events:none;
 }
 
 </style>
@@ -136,44 +124,45 @@ pointer-events:none;
 
 <body>
 
+<div class="container">
+
 <div class="card">
 
-<div id="joinArea">
-
-<h1>TS Quiz</h1>
-
-<div class="subtitle">
-Entrar al juego
-</div>
-
-<input
-id="playerName"
-placeholder="Tu nombre"
->
+<h1 style="text-align:center;font-size:50px;">
+TS Quiz
+</h1>
 
 <input
 id="roomCode"
-placeholder="Código sala"
->
+placeholder="Código de sala">
+
+<input
+id="playerName"
+placeholder="Tu nombre">
 
 <button onclick="joinRoom()">
 ENTRAR
 </button>
 
-<div
-id="status"
-class="status">
 </div>
 
+<div
+id="gameArea"
+style="display:none;">
+
+<div class="playerName" id="playerDisplay">
+Jugador
 </div>
 
-<div id="gameArea">
-
-<div
-id="timer"
-class="timer">
+<div class="timer" id="timer">
 15
 </div>
+
+<div class="card">
+
+<img
+id="questionImage"
+src="">
 
 <div
 id="question"
@@ -183,20 +172,14 @@ Esperando pregunta...
 
 <div id="answers"></div>
 
+</div>
+
+</div>
+
 <div
 id="waiting"
-class="waiting"
-style="display:none;">
-✅ Respuesta enviada
-</div>
-
-<div
-id="timeOver"
-class="timeOver"
-style="display:none;">
-⏰ Tiempo terminado
-</div>
-
+class="waiting">
+Esperando juego...
 </div>
 
 </div>
@@ -209,8 +192,8 @@ from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
 import {
 getDatabase,
 ref,
-push,
 set,
+push,
 onValue
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
@@ -240,64 +223,67 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 let currentRoom = "";
-let playerName = "";
+let currentPlayer = "";
 let answered = false;
-let timerActive = true;
 
 window.joinRoom = function(){
 
-const name =
-document.getElementById("playerName").value;
-
 const code =
-document.getElementById("roomCode").value;
+document.getElementById("roomCode")
+.value;
 
-if(name.trim() === ""){
+const name =
+document.getElementById("playerName")
+.value;
 
-alert("Ingresa tu nombre");
+if(code.trim() === "" || name.trim() === ""){
 
-return;
-
-}
-
-if(code.trim() === ""){
-
-alert("Ingresa código");
+alert("Completa datos");
 
 return;
 
 }
 
-playerName = name;
 currentRoom = code;
+currentPlayer = name;
 
 const playerRef =
-push(ref(db,'rooms/' + code + '/players'));
+push(
+ref(
+db,
+'rooms/' + code + '/players'
+)
+);
 
 set(playerRef,{
 name:name,
 score:0
 });
 
-document.getElementById("status")
-.innerHTML =
-"✅ Conectado";
-
-document.getElementById("joinArea")
-.style.display = "none";
-
 document.getElementById("gameArea")
 .style.display = "block";
 
-listenGame(code);
-listenTimer(code);
+document.getElementById("waiting")
+.style.display = "none";
+
+document.getElementById("playerDisplay")
+.innerHTML =
+"👤 " + name;
+
+listenGame();
+listenTimer();
 
 }
 
-function listenGame(code){
+function listenGame(){
 
 const gameRef =
-ref(db,'rooms/' + code + '/game');
+ref(
+db,
+'rooms/' +
+currentRoom +
+'/game'
+);
 
 onValue(gameRef,(snapshot)=>{
 
@@ -307,13 +293,42 @@ if(data){
 
 answered = false;
 
-document.getElementById("waiting")
+document.getElementById("question")
+.innerHTML =
+data.question;
+
+if(data.image){
+
+document.getElementById("questionImage")
+.style.display = "block";
+
+document.getElementById("questionImage")
+.src = data.image;
+
+}else{
+
+document.getElementById("questionImage")
 .style.display = "none";
 
-document.getElementById("timeOver")
-.style.display = "none";
+}
 
-showQuestion(data);
+const answers =
+document.getElementById("answers");
+
+answers.innerHTML = "";
+
+data.answers.forEach((answer,index)=>{
+
+answers.innerHTML +=
+`
+<button
+class="answerBtn"
+onclick="sendAnswer(${index},this)">
+${answer}
+</button>
+`;
+
+});
 
 }
 
@@ -321,10 +336,15 @@ showQuestion(data);
 
 }
 
-function listenTimer(code){
+function listenTimer(){
 
 const timerRef =
-ref(db,'rooms/' + code + '/timer');
+ref(
+db,
+'rooms/' +
+currentRoom +
+'/timer'
+);
 
 onValue(timerRef,(snapshot)=>{
 
@@ -336,19 +356,9 @@ document.getElementById("timer")
 .innerHTML =
 data.time;
 
-timerActive = data.active;
-
 if(!data.active){
 
-document.getElementById("timeOver")
-.style.display = "block";
-
-document.querySelectorAll(".answer")
-.forEach(el=>{
-
-el.classList.add("disabled");
-
-});
+disableButtons();
 
 }
 
@@ -358,50 +368,15 @@ el.classList.add("disabled");
 
 }
 
-function showQuestion(data){
-
-document.getElementById("question")
-.innerHTML =
-data.question;
-
-const answers =
-document.getElementById("answers");
-
-answers.innerHTML = "";
-
-const colors = [
-"#ff4d4d",
-"#3b82f6",
-"#22c55e",
-"#f59e0b"
-];
-
-data.answers.forEach((answer,index)=>{
-
-answers.innerHTML +=
-`
-<div
-class="answer"
-style="background:${colors[index]}"
-onclick="answerQuestion(${index})"
->
-${answer}
-</div>
-`;
-
-});
-
-}
-
-window.answerQuestion = function(index){
+window.sendAnswer = function(answer,button){
 
 if(answered) return;
 
-if(!timerActive) return;
-
 answered = true;
 
-set(
+button.classList.add("success");
+
+const responseRef =
 push(
 ref(
 db,
@@ -409,19 +384,29 @@ db,
 currentRoom +
 '/responses'
 )
-),
-{
-player:playerName,
-answer:index,
-time:Date.now()
-}
 );
 
-document.getElementById("answers")
-.innerHTML = "";
+set(responseRef,{
+player:currentPlayer,
+answer:answer
+});
 
-document.getElementById("waiting")
-.style.display = "block";
+disableButtons();
+
+}
+
+function disableButtons(){
+
+const buttons =
+document.querySelectorAll(".answerBtn");
+
+buttons.forEach(button=>{
+
+button.disabled = true;
+
+button.style.opacity = 0.6;
+
+});
 
 }
 
