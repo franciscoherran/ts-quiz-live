@@ -76,6 +76,10 @@ margin-top:12px;
 font-size:20px;
 }
 
+.correct{
+background:#00c853 !important;
+}
+
 .response{
 background:#102c3d;
 padding:15px;
@@ -92,6 +96,16 @@ font-size:28px;
 text-align:center;
 color:#03b2ff;
 font-weight:bold;
+}
+
+.leader{
+background:#102c3d;
+padding:18px;
+border-radius:16px;
+margin-bottom:12px;
+display:flex;
+justify-content:space-between;
+font-size:22px;
 }
 
 h2{
@@ -145,10 +159,10 @@ class="counter">
 </div>
 
 <h2>
-Respuestas en vivo
+Leaderboard
 </h2>
 
-<div id="responsesList"></div>
+<div id="leaderboard"></div>
 
 </div>
 
@@ -166,7 +180,9 @@ getDatabase,
 ref,
 set,
 remove,
-onValue
+onValue,
+get,
+update
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
@@ -203,7 +219,8 @@ answers:[
 "Moisés",
 "David",
 "Pedro"
-]
+],
+correct:0
 },
 
 {
@@ -213,7 +230,8 @@ answers:[
 "Pablo",
 "Juan",
 "Samuel"
-]
+],
+correct:0
 },
 
 {
@@ -223,7 +241,8 @@ answers:[
 "14",
 "40",
 "50"
-]
+],
+correct:2
 }
 
 ];
@@ -273,16 +292,18 @@ list.innerHTML = "";
 
 if(data){
 
-Object.values(data).forEach(player=>{
+Object.entries(data).forEach(([id,player])=>{
 
 list.innerHTML +=
 `
 <div class="player">
-👤 ${player.name}
+👤 ${player.name} — ${player.score || 0} pts
 </div>
 `;
 
 });
+
+showLeaderboard(data);
 
 }
 
@@ -313,11 +334,19 @@ document.getElementById("answersBox");
 
 answersBox.innerHTML = "";
 
-q.answers.forEach(answer=>{
+q.answers.forEach((answer,index)=>{
+
+let className = "answer";
+
+if(index === q.correct){
+
+className += " correct";
+
+}
 
 answersBox.innerHTML +=
 `
-<div class="answer">
+<div class="${className}">
 ${answer}
 </div>
 `;
@@ -355,37 +384,53 @@ function listenResponses(code){
 const responsesRef =
 ref(db,'rooms/' + code + '/responses');
 
-onValue(responsesRef,(snapshot)=>{
+onValue(responsesRef,async(snapshot)=>{
 
 const data = snapshot.val();
-
-const list =
-document.getElementById("responsesList");
-
-list.innerHTML = "";
 
 let total = 0;
 
 if(data){
 
+const playersSnap =
+await get(
+ref(db,'rooms/' + code + '/players')
+);
+
+const players =
+playersSnap.val();
+
 Object.values(data).forEach(response=>{
 
 total++;
 
-list.innerHTML +=
-`
-<div class="response">
+const q =
+questions[currentQuestion];
 
-<div>
-👤 ${response.player}
-</div>
+if(response.answer === q.correct){
 
-<div>
-Respondió
-</div>
+Object.entries(players).forEach(([id,player])=>{
 
-</div>
-`;
+if(player.name === response.player){
+
+update(
+ref(
+db,
+'rooms/' +
+code +
+'/players/' +
+id
+),
+{
+score:(player.score || 0) + 100
+}
+);
+
+}
+
+});
+
+}
 
 });
 
@@ -394,6 +439,40 @@ Respondió
 document.getElementById("responseCounter")
 .innerHTML =
 total + " respuestas";
+
+});
+
+}
+
+function showLeaderboard(players){
+
+const leaderboard =
+document.getElementById("leaderboard");
+
+leaderboard.innerHTML = "";
+
+const sorted =
+Object.values(players)
+.sort((a,b)=>
+(b.score || 0) - (a.score || 0)
+);
+
+sorted.slice(0,5).forEach((player,index)=>{
+
+leaderboard.innerHTML +=
+`
+<div class="leader">
+
+<div>
+${index + 1}. 👤 ${player.name}
+</div>
+
+<div>
+${player.score || 0} pts
+</div>
+
+</div>
+`;
 
 });
 
