@@ -41,6 +41,11 @@ font-size:22px;
 font-weight:bold;
 cursor:pointer;
 margin-top:20px;
+transition:0.2s;
+}
+
+button:hover{
+transform:scale(1.01);
 }
 
 .roomCode{
@@ -129,6 +134,90 @@ margin-top:30px;
 color:#88cbe7;
 }
 
+.podiumContainer{
+display:none;
+margin-top:50px;
+animation:fadeIn 1s;
+}
+
+.podiumTitle{
+text-align:center;
+font-size:60px;
+margin-bottom:40px;
+}
+
+.podium{
+display:flex;
+align-items:flex-end;
+justify-content:center;
+gap:20px;
+height:420px;
+}
+
+.place{
+width:200px;
+border-radius:24px 24px 0 0;
+padding:20px;
+text-align:center;
+display:flex;
+flex-direction:column;
+justify-content:flex-end;
+animation:up 1s;
+}
+
+.first{
+height:360px;
+background:#ffd700;
+color:#051622;
+}
+
+.second{
+height:260px;
+background:#c0c0c0;
+color:#051622;
+}
+
+.third{
+height:220px;
+background:#cd7f32;
+color:white;
+}
+
+.medal{
+font-size:80px;
+margin-bottom:20px;
+}
+
+.playerName{
+font-size:32px;
+font-weight:bold;
+margin-bottom:15px;
+}
+
+.playerScore{
+font-size:28px;
+}
+
+@keyframes fadeIn{
+from{
+opacity:0;
+}
+to{
+opacity:1;
+}
+}
+
+@keyframes up{
+from{
+transform:translateY(100px);
+opacity:0;
+}
+to{
+transform:translateY(0);
+opacity:1;
+}
+}
+
 </style>
 
 </head>
@@ -199,6 +288,84 @@ Leaderboard
 </h2>
 
 <div id="leaderboard"></div>
+
+<button onclick="showPodium()">
+🏆 MOSTRAR PODIUM FINAL
+</button>
+
+<div
+id="podium"
+class="podiumContainer">
+
+<h2 class="podiumTitle">
+🏆 PODIUM FINAL
+</h2>
+
+<div class="podium">
+
+<div class="place second">
+
+<div class="medal">
+🥈
+</div>
+
+<div
+id="secondName"
+class="playerName">
+-
+</div>
+
+<div
+id="secondScore"
+class="playerScore">
+0 pts
+</div>
+
+</div>
+
+<div class="place first">
+
+<div class="medal">
+🥇
+</div>
+
+<div
+id="firstName"
+class="playerName">
+-
+</div>
+
+<div
+id="firstScore"
+class="playerScore">
+0 pts
+</div>
+
+</div>
+
+<div class="place third">
+
+<div class="medal">
+🥉
+</div>
+
+<div
+id="thirdName"
+class="playerName">
+-
+</div>
+
+<div
+id="thirdScore"
+class="playerScore">
+0 pts
+</div>
+
+</div>
+
+</div>
+
+</div>
 
 </div>
 
@@ -566,6 +733,66 @@ ${player.score || 0} pts
 
 </div>
 `;
+
+});
+
+}
+
+window.showPodium = function(){
+
+const playersRef =
+ref(db,'rooms/' + currentRoom + '/players');
+
+get(playersRef).then((snapshot)=>{
+
+const players = snapshot.val();
+
+if(!players) return;
+
+const sorted =
+Object.values(players)
+.sort((a,b)=>
+(b.score || 0) - (a.score || 0)
+);
+
+document.getElementById("podium")
+.style.display = "block";
+
+if(sorted[0]){
+
+document.getElementById("firstName")
+.innerHTML =
+sorted[0].name;
+
+document.getElementById("firstScore")
+.innerHTML =
+(sorted[0].score || 0) + " pts";
+
+}
+
+if(sorted[1]){
+
+document.getElementById("secondName")
+.innerHTML =
+sorted[1].name;
+
+document.getElementById("secondScore")
+.innerHTML =
+(sorted[1].score || 0) + " pts";
+
+}
+
+if(sorted[2]){
+
+document.getElementById("thirdName")
+.innerHTML =
+sorted[2].name;
+
+document.getElementById("thirdScore")
+.innerHTML =
+(sorted[2].score || 0) + " pts";
+
+}
 
 });
 
