@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TS Quiz Play</title>
+
+<style>
+
+body{
+margin:0;
+background:#051622;
+font-family:Arial;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+}
+
+.card{
+background:#0d2735;
+padding:35px;
+border-radius:24px;
+width:90%;
+max-width:450px;
+}
+
+h1{
+text-align:center;
+font-size:42px;
+margin-bottom:10px;
+}
+
+.subtitle{
+text-align:center;
+color:#88cbe7;
+margin-bottom:30px;
+}
+
+input{
+width:100%;
+padding:18px;
+border:none;
+border-radius:18px;
+background:#102c3d;
+color:white;
+font-size:18px;
+margin-bottom:18px;
+box-sizing:border-box;
+}
+
+button{
+width:100%;
+padding:20px;
+border:none;
+border-radius:18px;
+background:#03b2ff;
+color:#051622;
+font-size:20px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.status{
+margin-top:20px;
+text-align:center;
+color:#88cbe7;
+font-size:18px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>TS Quiz</h1>
+
+<div class="subtitle">
+Entrar al juego
+</div>
+
+<input
+id="playerName"
+placeholder="Tu nombre"
+>
+
+<input
+id="roomCode"
+placeholder="Código sala"
+>
+
+<button onclick="joinRoom()">
+ENTRAR
+</button>
+
+<div
+id="status"
+class="status">
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+push,
+set
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyBzMS3vAgZbvDpMoKGbALPcBl_oBIayDfc",
+
+authDomain: "ts-quiz-live.firebaseapp.com",
+
+databaseURL: "https://ts-quiz-live-default-rtdb.firebaseio.com",
+
+projectId: "ts-quiz-live",
+
+storageBucket: "ts-quiz-live.firebasestorage.app",
+
+messagingSenderId: "1008762047515",
+
+appId: "1:1008762047515:web:d848a84da0ef965ce1fcbe",
+
+measurementId: "G-MZENY9GPQ7"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+window.joinRoom = function(){
+
+const name =
+document.getElementById("playerName").value;
+
+const code =
+document.getElementById("roomCode").value;
+
+if(name.trim() === ""){
+
+alert("Ingresa tu nombre");
+
+return;
+
+}
+
+if(code.trim() === ""){
+
+alert("Ingresa código");
+
+return;
+
+}
+
+const playerRef =
+push(ref(db,'rooms/' + code + '/players'));
+
+set(playerRef,{
+name:name,
+score:0
+});
+
+document.getElementById("status")
+.innerHTML =
+"✅ Conectado a sala " + code;
+
+}
+
+</script>
+
+</body>
+
+</html>
