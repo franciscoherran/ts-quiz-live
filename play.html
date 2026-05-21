@@ -109,6 +109,27 @@ font-size:22px;
 color:#03b2ff;
 }
 
+.timer{
+text-align:center;
+font-size:60px;
+font-weight:bold;
+margin-bottom:20px;
+color:#03b2ff;
+}
+
+.timeOver{
+text-align:center;
+font-size:26px;
+margin-top:20px;
+color:#ff4d4d;
+font-weight:bold;
+}
+
+.disabled{
+opacity:0.4;
+pointer-events:none;
+}
+
 </style>
 
 </head>
@@ -149,6 +170,12 @@ class="status">
 <div id="gameArea">
 
 <div
+id="timer"
+class="timer">
+15
+</div>
+
+<div
 id="question"
 class="question">
 Esperando pregunta...
@@ -161,6 +188,13 @@ id="waiting"
 class="waiting"
 style="display:none;">
 ✅ Respuesta enviada
+</div>
+
+<div
+id="timeOver"
+class="timeOver"
+style="display:none;">
+⏰ Tiempo terminado
 </div>
 
 </div>
@@ -208,6 +242,7 @@ const db = getDatabase(app);
 let currentRoom = "";
 let playerName = "";
 let answered = false;
+let timerActive = true;
 
 window.joinRoom = function(){
 
@@ -255,6 +290,7 @@ document.getElementById("gameArea")
 .style.display = "block";
 
 listenGame(code);
+listenTimer(code);
 
 }
 
@@ -274,7 +310,47 @@ answered = false;
 document.getElementById("waiting")
 .style.display = "none";
 
+document.getElementById("timeOver")
+.style.display = "none";
+
 showQuestion(data);
+
+}
+
+});
+
+}
+
+function listenTimer(code){
+
+const timerRef =
+ref(db,'rooms/' + code + '/timer');
+
+onValue(timerRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+if(data){
+
+document.getElementById("timer")
+.innerHTML =
+data.time;
+
+timerActive = data.active;
+
+if(!data.active){
+
+document.getElementById("timeOver")
+.style.display = "block";
+
+document.querySelectorAll(".answer")
+.forEach(el=>{
+
+el.classList.add("disabled");
+
+});
+
+}
 
 }
 
@@ -320,6 +396,8 @@ ${answer}
 window.answerQuestion = function(index){
 
 if(answered) return;
+
+if(!timerActive) return;
 
 answered = true;
 
