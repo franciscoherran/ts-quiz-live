@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TS Quiz Play</title>
+<title>TS Quiz Play PRO</title>
 
 <style>
 
@@ -28,9 +28,10 @@ background:#0d2735;
 padding:25px;
 border-radius:24px;
 margin-top:20px;
+animation:fade 0.5s;
 }
 
-input{
+input,select{
 width:100%;
 padding:18px;
 border:none;
@@ -54,10 +55,11 @@ font-weight:bold;
 cursor:pointer;
 margin-top:10px;
 transition:0.2s;
+cursor:pointer;
 }
 
 button:hover{
-transform:scale(1.01);
+transform:scale(1.02);
 }
 
 #questionImage{
@@ -67,12 +69,14 @@ object-fit:cover;
 border-radius:20px;
 margin-bottom:20px;
 display:none;
+animation:fade 0.5s;
 }
 
 .question{
 font-size:30px;
 text-align:center;
 margin-bottom:25px;
+animation:fade 0.5s;
 }
 
 .answerBtn{
@@ -88,9 +92,15 @@ background:#1f4c66;
 .timer{
 margin-top:20px;
 text-align:center;
-font-size:60px;
+font-size:70px;
 font-weight:bold;
 color:#03b2ff;
+transition:0.3s;
+}
+
+.timerPulse{
+transform:scale(1.15);
+color:#ff5252;
 }
 
 .waiting{
@@ -105,17 +115,47 @@ background:#00c853 !important;
 color:#051622 !important;
 }
 
-.error{
-background:#ff5252 !important;
-color:white !important;
-}
-
 .playerName{
 text-align:center;
 font-size:28px;
 margin-top:20px;
 color:#03b2ff;
 font-weight:bold;
+}
+
+.teamBadge{
+display:inline-block;
+padding:8px 18px;
+border-radius:20px;
+margin-top:10px;
+font-size:18px;
+font-weight:bold;
+}
+
+.teamAzul{
+background:#2196f3;
+}
+
+.teamRojo{
+background:#ff5252;
+}
+
+.teamVerde{
+background:#00c853;
+}
+
+.teamAmarillo{
+background:#ffd600;
+color:#051622;
+}
+
+@keyframes fade{
+from{
+opacity:0;
+}
+to{
+opacity:1;
+}
 }
 
 </style>
@@ -129,7 +169,7 @@ font-weight:bold;
 <div class="card">
 
 <h1 style="text-align:center;font-size:50px;">
-TS Quiz
+TS Quiz PRO
 </h1>
 
 <input
@@ -139,6 +179,26 @@ placeholder="Código de sala">
 <input
 id="playerName"
 placeholder="Tu nombre">
+
+<select id="team">
+
+<option value="Azul">
+🔵 Equipo Azul
+</option>
+
+<option value="Rojo">
+🔴 Equipo Rojo
+</option>
+
+<option value="Verde">
+🟢 Equipo Verde
+</option>
+
+<option value="Amarillo">
+🟡 Equipo Amarillo
+</option>
+
+</select>
 
 <button onclick="joinRoom()">
 ENTRAR
@@ -152,6 +212,11 @@ style="display:none;">
 
 <div class="playerName" id="playerDisplay">
 Jugador
+</div>
+
+<div
+id="teamDisplay"
+style="text-align:center;">
 </div>
 
 <div class="timer" id="timer">
@@ -224,7 +289,21 @@ const db = getDatabase(app);
 
 let currentRoom = "";
 let currentPlayer = "";
+let currentTeam = "";
 let answered = false;
+
+const urlParams =
+new URLSearchParams(window.location.search);
+
+const roomFromURL =
+urlParams.get("room");
+
+if(roomFromURL){
+
+document.getElementById("roomCode")
+.value = roomFromURL;
+
+}
 
 window.joinRoom = function(){
 
@@ -234,6 +313,10 @@ document.getElementById("roomCode")
 
 const name =
 document.getElementById("playerName")
+.value;
+
+const team =
+document.getElementById("team")
 .value;
 
 if(code.trim() === "" || name.trim() === ""){
@@ -246,6 +329,7 @@ return;
 
 currentRoom = code;
 currentPlayer = name;
+currentTeam = team;
 
 const playerRef =
 push(
@@ -257,6 +341,7 @@ db,
 
 set(playerRef,{
 name:name,
+team:team,
 score:0
 });
 
@@ -269,6 +354,32 @@ document.getElementById("waiting")
 document.getElementById("playerDisplay")
 .innerHTML =
 "👤 " + name;
+
+let teamClass = "";
+
+if(team === "Azul"){
+teamClass = "teamAzul";
+}
+
+if(team === "Rojo"){
+teamClass = "teamRojo";
+}
+
+if(team === "Verde"){
+teamClass = "teamVerde";
+}
+
+if(team === "Amarillo"){
+teamClass = "teamAmarillo";
+}
+
+document.getElementById("teamDisplay")
+.innerHTML =
+`
+<div class="teamBadge ${teamClass}">
+${team}
+</div>
+`;
 
 listenGame();
 listenTimer();
@@ -356,6 +467,18 @@ document.getElementById("timer")
 .innerHTML =
 data.time;
 
+if(data.time <= 5){
+
+document.getElementById("timer")
+.classList.add("timerPulse");
+
+}else{
+
+document.getElementById("timer")
+.classList.remove("timerPulse");
+
+}
+
 if(!data.active){
 
 disableButtons();
@@ -388,6 +511,7 @@ currentRoom +
 
 set(responseRef,{
 player:currentPlayer,
+team:currentTeam,
 answer:answer
 });
 
