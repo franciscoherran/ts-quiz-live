@@ -6,7 +6,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TS Quiz Host</title>
+<title>TS Quiz Host PRO</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
 <style>
 
@@ -15,6 +18,7 @@ margin:0;
 background:#051622;
 font-family:Arial;
 color:white;
+overflow-x:hidden;
 }
 
 .container{
@@ -28,6 +32,7 @@ background:#0d2735;
 padding:30px;
 border-radius:24px;
 margin-top:30px;
+animation:fade 0.5s;
 }
 
 button{
@@ -45,7 +50,7 @@ transition:0.2s;
 }
 
 button:hover{
-transform:scale(1.01);
+transform:scale(1.02);
 }
 
 .roomCode{
@@ -53,7 +58,20 @@ font-size:80px;
 text-align:center;
 font-weight:bold;
 color:#03b2ff;
-margin:30px 0;
+margin-top:20px;
+}
+
+#qrcode{
+display:flex;
+justify-content:center;
+margin-top:25px;
+}
+
+.joinText{
+text-align:center;
+margin-top:20px;
+font-size:24px;
+color:#88cbe7;
 }
 
 .player{
@@ -62,6 +80,7 @@ padding:15px;
 border-radius:14px;
 margin-bottom:10px;
 font-size:20px;
+animation:slideUp 0.4s;
 }
 
 #questionImage{
@@ -71,6 +90,7 @@ object-fit:cover;
 border-radius:24px;
 margin-top:30px;
 display:none;
+animation:fade 0.5s;
 }
 
 #questionBox{
@@ -80,6 +100,7 @@ padding:25px;
 border-radius:20px;
 font-size:28px;
 text-align:center;
+animation:fade 0.5s;
 }
 
 .answer{
@@ -88,6 +109,7 @@ padding:15px;
 border-radius:14px;
 margin-top:12px;
 font-size:20px;
+animation:slideUp 0.3s;
 }
 
 .correct{
@@ -110,14 +132,21 @@ margin-bottom:12px;
 display:flex;
 justify-content:space-between;
 font-size:22px;
+animation:slideUp 0.4s;
 }
 
 .timerBox{
 margin-top:25px;
 text-align:center;
-font-size:70px;
+font-size:90px;
 font-weight:bold;
 color:#03b2ff;
+transition:0.3s;
+}
+
+.timerPulse{
+transform:scale(1.1);
+color:#ff5252;
 }
 
 .timeBar{
@@ -146,7 +175,7 @@ color:#88cbe7;
 .podiumContainer{
 display:none;
 margin-top:50px;
-animation:fadeIn 1s;
+animation:fade 1s;
 }
 
 .podiumTitle{
@@ -207,11 +236,22 @@ margin-bottom:15px;
 font-size:28px;
 }
 
-@keyframes fadeIn{
+@keyframes fade{
 from{
 opacity:0;
 }
 to{
+opacity:1;
+}
+}
+
+@keyframes slideUp{
+from{
+transform:translateY(20px);
+opacity:0;
+}
+to{
+transform:translateY(0);
 opacity:1;
 }
 }
@@ -236,7 +276,7 @@ opacity:1;
 <div class="container">
 
 <h1 style="text-align:center;font-size:60px;">
-TS Quiz Host
+TS Quiz PRO
 </h1>
 
 <div class="card">
@@ -257,7 +297,13 @@ Cargando preguntas...
 000000
 </div>
 
-<h2>
+<div class="joinText">
+Escanea para entrar al juego
+</div>
+
+<div id="qrcode"></div>
+
+<h2 style="margin-top:40px;">
 Jugadores conectados
 </h2>
 
@@ -267,10 +313,10 @@ Jugadores conectados
 SIGUIENTE PREGUNTA
 </button>
 
-<div class="timerBox">
-<span id="timer">
+<div
+id="timer"
+class="timerBox">
 15
-</span>
 </div>
 
 <div class="timeBar">
@@ -317,63 +363,21 @@ class="podiumContainer">
 <div class="podium">
 
 <div class="place second">
-
-<div class="medal">
-🥈
-</div>
-
-<div
-id="secondName"
-class="playerName">
--
-</div>
-
-<div
-id="secondScore"
-class="playerScore">
-0 pts
-</div>
-
+<div class="medal">🥈</div>
+<div id="secondName" class="playerName">-</div>
+<div id="secondScore" class="playerScore">0 pts</div>
 </div>
 
 <div class="place first">
-
-<div class="medal">
-🥇
-</div>
-
-<div
-id="firstName"
-class="playerName">
--
-</div>
-
-<div
-id="firstScore"
-class="playerScore">
-0 pts
-</div>
-
+<div class="medal">🥇</div>
+<div id="firstName" class="playerName">-</div>
+<div id="firstScore" class="playerScore">0 pts</div>
 </div>
 
 <div class="place third">
-
-<div class="medal">
-🥉
-</div>
-
-<div
-id="thirdName"
-class="playerName">
--
-</div>
-
-<div
-id="thirdScore"
-class="playerScore">
-0 pts
-</div>
-
+<div class="medal">🥉</div>
+<div id="thirdName" class="playerName">-</div>
+<div id="thirdScore" class="playerScore">0 pts</div>
 </div>
 
 </div>
@@ -431,11 +435,6 @@ new Audio(
 "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
 );
 
-const winSound =
-new Audio(
-"https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg"
-);
-
 const podiumSound =
 new Audio(
 "https://actions.google.com/sounds/v1/crowds/applause.ogg"
@@ -470,14 +469,6 @@ document.getElementById("loading")
 
 window.createRoom = function(){
 
-if(questions.length === 0){
-
-alert("No hay preguntas");
-
-return;
-
-}
-
 const code =
 Math.floor(100000 + Math.random() * 900000)
 .toString();
@@ -493,6 +484,24 @@ document.getElementById("roomArea")
 
 document.getElementById("roomCode")
 .innerHTML = code;
+
+document.getElementById("qrcode")
+.innerHTML = "";
+
+const playURL =
+window.location.origin +
+window.location.pathname
+.replace("host.html","play.html")
++ "?room=" + code;
+
+new QRCode(
+document.getElementById("qrcode"),
+{
+text:playURL,
+width:220,
+height:220
+}
+);
 
 listenPlayers(code);
 
@@ -514,14 +523,6 @@ document.getElementById("timer")
 document.getElementById("timeFill")
 .style.width = "100%";
 
-set(
-ref(db,'rooms/' + currentRoom + '/timer'),
-{
-time:timer,
-active:true
-}
-);
-
 interval = setInterval(()=>{
 
 timer--;
@@ -536,31 +537,23 @@ document.getElementById("timeFill")
 .style.width =
 percent + "%";
 
-set(
-ref(db,'rooms/' + currentRoom + '/timer'),
-{
-time:timer,
-active:true
-}
-);
+if(timer <= 5){
 
-if(timer <= 5 && timer > 0){
+document.getElementById("timer")
+.classList.add("timerPulse");
 
 tickSound.play();
+
+}else{
+
+document.getElementById("timer")
+.classList.remove("timerPulse");
 
 }
 
 if(timer <= 0){
 
 clearInterval(interval);
-
-set(
-ref(db,'rooms/' + currentRoom + '/timer'),
-{
-time:0,
-active:false
-}
-);
 
 }
 
@@ -584,7 +577,7 @@ list.innerHTML = "";
 
 if(data){
 
-Object.entries(data).forEach(([id,player])=>{
+Object.values(data).forEach((player)=>{
 
 list.innerHTML +=
 `
@@ -718,8 +711,6 @@ questions[currentQuestion];
 
 if(response.answer === q.correct){
 
-winSound.play();
-
 Object.entries(players).forEach(([id,player])=>{
 
 if(player.name === response.player){
@@ -810,6 +801,11 @@ document.getElementById("podium")
 .style.display = "block";
 
 podiumSound.play();
+
+confetti({
+particleCount:300,
+spread:180
+});
 
 if(sorted[0]){
 
