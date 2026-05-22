@@ -423,6 +423,18 @@ class="counter">
 0 respuestas
 </div>
 
+<div
+id="fastestPlayerBox"
+class="counter"
+style="
+font-size:32px;
+color:#ffd700;
+margin-top:10px;">
+
+⚡ Más rápido: -
+
+</div>
+
 <h2>
 🏅 Leaderboard Individual
 </h2>
@@ -571,6 +583,9 @@ let currentQuestion = 0;
 let currentRoom = "";
 let timer = 15;
 let interval;
+
+let fastestPlayer = "";
+let fastestTime = 999;
 
 loadQuestions();
 
@@ -834,6 +849,14 @@ ${score} pts
 
 function showQuestion(){
 
+fastestPlayer = "";
+fastestTime = 999;
+
+document.getElementById(
+"fastestPlayerBox"
+).innerHTML =
+"⚡ Más rápido: -";
+
 remove(
 ref(
 db,
@@ -952,6 +975,29 @@ total++;
 
 const q =
 questions[currentQuestion];
+
+const responseSpeed =
+15 - response.timeLeft;
+
+if(responseSpeed < fastestTime){
+
+fastestTime = responseSpeed;
+
+fastestPlayer = response.player;
+
+document.getElementById(
+"fastestPlayerBox"
+).innerHTML =
+
+"⚡ Más rápido: "
++
+fastestPlayer
++
+" (" +
+responseSpeed +
+"s)";
+
+}
 
 Object.entries(players).forEach(([id,player])=>{
 
