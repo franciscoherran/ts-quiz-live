@@ -137,21 +137,6 @@ justify-content:space-between;
 font-size:22px;
 }
 
-.teamLeader{
-padding:20px;
-border-radius:18px;
-margin-bottom:15px;
-font-size:24px;
-font-weight:bold;
-display:flex;
-justify-content:space-between;
-}
-
-.teamAzul{background:#1976d2;}
-.teamRojo{background:#d32f2f;}
-.teamVerde{background:#2e7d32;}
-.teamAmarillo{background:#fdd835;color:#051622;}
-
 .timerBox{
 margin-top:25px;
 text-align:center;
@@ -305,7 +290,11 @@ Esperando inicio del juego...
 <div
 id="fastestPlayerBox"
 class="counter"
-style="font-size:32px;color:#ffd700;margin-top:10px;">
+style="
+font-size:32px;
+color:#ffd700;
+margin-top:10px;
+">
 
 ⚡ Más rápido: -
 
@@ -533,9 +522,31 @@ document.getElementById(
 "questionVideo"
 ).style.display = "block";
 
+let videoURL = q.video;
+
+if(videoURL.includes("watch?v=")){
+
+videoURL =
+videoURL.replace(
+"watch?v=",
+"embed/"
+);
+
+}
+
+if(videoURL.includes("youtu.be/")){
+
+videoURL =
+videoURL.replace(
+"youtu.be/",
+"https://www.youtube.com/embed/"
+);
+
+}
+
 document.getElementById(
 "questionVideo"
-).src = q.video;
+).src = videoURL;
 
 }else{
 
