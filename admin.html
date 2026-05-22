@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TS Quiz Admin</title>
+<title>TS Quiz Admin PRO</title>
 
 <style>
 
@@ -19,7 +19,7 @@ padding:30px;
 }
 
 .container{
-max-width:800px;
+max-width:900px;
 margin:auto;
 }
 
@@ -35,7 +35,8 @@ font-size:50px;
 margin-bottom:30px;
 }
 
-input,select{
+input,
+select{
 width:100%;
 padding:18px;
 border:none;
@@ -58,6 +59,11 @@ font-size:20px;
 font-weight:bold;
 cursor:pointer;
 margin-top:10px;
+transition:0.2s;
+}
+
+button:hover{
+transform:scale(1.02);
 }
 
 .success{
@@ -72,6 +78,7 @@ background:#102c3d;
 padding:20px;
 border-radius:18px;
 margin-top:20px;
+animation:fade 0.4s;
 }
 
 .answer{
@@ -96,6 +103,65 @@ margin-top:15px;
 margin-bottom:15px;
 }
 
+.previewVideo{
+width:100%;
+height:300px;
+border:none;
+border-radius:16px;
+margin-top:15px;
+margin-bottom:15px;
+}
+
+.badge{
+display:inline-block;
+padding:8px 14px;
+border-radius:12px;
+font-size:14px;
+font-weight:bold;
+margin-right:10px;
+margin-top:10px;
+}
+
+.easy{
+background:#00c853;
+color:#051622;
+}
+
+.medium{
+background:#ffd600;
+color:#051622;
+}
+
+.hard{
+background:#ff5252;
+}
+
+.actions{
+display:flex;
+gap:10px;
+margin-top:20px;
+}
+
+.deleteBtn{
+background:#ff5252;
+color:white;
+}
+
+.editBtn{
+background:#ffd54f;
+}
+
+@keyframes fade{
+from{
+opacity:0;
+transform:translateY(10px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
 </style>
 
 </head>
@@ -107,22 +173,62 @@ margin-bottom:15px;
 <div class="card">
 
 <h1>
-TS Quiz Admin
+TS Quiz Admin PRO
 </h1>
 
-<input id="category" placeholder="Categoría">
+<input
+id="category"
+placeholder="Categoría">
 
-<input id="image" placeholder="URL de imagen">
+<select id="difficulty">
 
-<input id="question" placeholder="Pregunta">
+<option value="Fácil">
+Fácil
+</option>
 
-<input id="answer1" placeholder="Respuesta 1">
+<option value="Media">
+Media
+</option>
 
-<input id="answer2" placeholder="Respuesta 2">
+<option value="Difícil">
+Difícil
+</option>
 
-<input id="answer3" placeholder="Respuesta 3">
+</select>
 
-<input id="answer4" placeholder="Respuesta 4">
+<input
+id="time"
+type="number"
+placeholder="Tiempo en segundos"
+value="15">
+
+<input
+id="image"
+placeholder="URL de imagen">
+
+<input
+id="video"
+placeholder="URL video embed YouTube">
+
+<input
+id="question"
+placeholder="Pregunta">
+
+<input
+id="answer1"
+placeholder="Respuesta 1">
+
+<input
+id="answer2"
+placeholder="Respuesta 2">
+
+<input
+id="answer3"
+placeholder="Respuesta 3">
+
+<input
+id="answer4"
+placeholder="Respuesta 4">
 
 <select id="correct">
 
@@ -145,7 +251,7 @@ Respuesta correcta: 4
 </select>
 
 <button onclick="saveQuestion()">
-GUARDAR PREGUNTA
+💾 GUARDAR PREGUNTA
 </button>
 
 <div
@@ -156,7 +262,7 @@ class="success">
 </div>
 
 <h2 style="margin-top:40px;">
-Preguntas guardadas
+📚 Preguntas guardadas
 </h2>
 
 <div id="questionsList"></div>
@@ -173,7 +279,9 @@ getDatabase,
 ref,
 push,
 set,
-onValue
+onValue,
+remove,
+update
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
@@ -201,13 +309,26 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
+window.editingId = null;
+
 window.saveQuestion = function(){
 
 const category =
 document.getElementById("category").value;
 
+const difficulty =
+document.getElementById("difficulty").value;
+
+const time =
+parseInt(
+document.getElementById("time").value
+);
+
 const image =
 document.getElementById("image").value;
+
+const video =
+document.getElementById("video").value;
 
 const question =
 document.getElementById("question").value;
@@ -231,20 +352,23 @@ document.getElementById("correct").value
 
 if(question.trim() === ""){
 
-alert("Escribe pregunta");
+alert("Escribe una pregunta");
 
 return;
 
 }
 
-const questionRef =
-push(ref(db,'questions'));
-
-set(questionRef,{
+const questionData = {
 
 category:category,
 
+difficulty:difficulty,
+
+time:time,
+
 image:image,
+
+video:video,
 
 question:question,
 
@@ -257,20 +381,135 @@ answer4
 
 correct:correct
 
-});
+};
+
+if(window.editingId){
+
+update(
+ref(
+db,
+'questions/' + window.editingId
+),
+questionData
+);
+
+document.getElementById("success")
+.innerHTML =
+"✅ Pregunta actualizada";
+
+window.editingId = null;
+
+}else{
+
+const questionRef =
+push(ref(db,'questions'));
+
+set(questionRef,questionData);
 
 document.getElementById("success")
 .innerHTML =
 "✅ Pregunta guardada";
 
-document.getElementById("question").value = "";
+}
+
+clearForm();
+
+}
+
+function clearForm(){
+
+document.getElementById("category").value = "";
+document.getElementById("difficulty").value = "Fácil";
+document.getElementById("time").value = 15;
 document.getElementById("image").value = "";
+document.getElementById("video").value = "";
+document.getElementById("question").value = "";
 document.getElementById("answer1").value = "";
 document.getElementById("answer2").value = "";
 document.getElementById("answer3").value = "";
 document.getElementById("answer4").value = "";
+document.getElementById("correct").value = 0;
 
 }
+
+window.deleteQuestion = function(id){
+
+const confirmDelete =
+confirm(
+"¿Eliminar esta pregunta?"
+);
+
+if(!confirmDelete) return;
+
+remove(
+ref(db,'questions/' + id)
+);
+
+}
+
+window.editQuestion = function(id){
+
+const question =
+questionsCache[id];
+
+document.getElementById("category")
+.value =
+question.category || "";
+
+document.getElementById("difficulty")
+.value =
+question.difficulty || "Fácil";
+
+document.getElementById("time")
+.value =
+question.time || 15;
+
+document.getElementById("image")
+.value =
+question.image || "";
+
+document.getElementById("video")
+.value =
+question.video || "";
+
+document.getElementById("question")
+.value =
+question.question || "";
+
+document.getElementById("answer1")
+.value =
+question.answers[0] || "";
+
+document.getElementById("answer2")
+.value =
+question.answers[1] || "";
+
+document.getElementById("answer3")
+.value =
+question.answers[2] || "";
+
+document.getElementById("answer4")
+.value =
+question.answers[3] || "";
+
+document.getElementById("correct")
+.value =
+question.correct;
+
+window.editingId = id;
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+document.getElementById("success")
+.innerHTML =
+"✏️ Editando pregunta";
+
+}
+
+let questionsCache = {};
 
 const questionsRef =
 ref(db,'questions');
@@ -279,6 +518,8 @@ onValue(questionsRef,(snapshot)=>{
 
 const data = snapshot.val();
 
+questionsCache = data || {};
+
 const list =
 document.getElementById("questionsList");
 
@@ -286,7 +527,9 @@ list.innerHTML = "";
 
 if(data){
 
-Object.values(data).reverse().forEach(question=>{
+Object.entries(data)
+.reverse()
+.forEach(([id,question])=>{
 
 let answersHTML = "";
 
@@ -322,21 +565,80 @@ class="previewImage">
 
 }
 
+let videoHTML = "";
+
+if(question.video){
+
+videoHTML =
+`
+<iframe
+src="${question.video}"
+class="previewVideo"
+allowfullscreen>
+</iframe>
+`;
+
+}
+
+let difficultyClass = "easy";
+
+if(question.difficulty === "Media"){
+difficultyClass = "medium";
+}
+
+if(question.difficulty === "Difícil"){
+difficultyClass = "hard";
+}
+
 list.innerHTML +=
 `
 <div class="questionCard">
 
 ${imageHTML}
 
+${videoHTML}
+
 <h3>
 ${question.question}
 </h3>
 
-<div>
-📚 ${question.category}
+<div style="margin-top:10px;">
+
+<span class="badge ${difficultyClass}">
+${question.difficulty || "Fácil"}
+</span>
+
+<span class="badge">
+📚 ${question.category || "General"}
+</span>
+
+<span class="badge">
+⏱️ ${question.time || 15}s
+</span>
+
 </div>
 
 ${answersHTML}
+
+<div class="actions">
+
+<button
+class="editBtn"
+onclick="editQuestion('${id}')">
+
+✏️ EDITAR
+
+</button>
+
+<button
+class="deleteBtn"
+onclick="deleteQuestion('${id}')">
+
+🗑️ ELIMINAR
+
+</button>
+
+</div>
 
 </div>
 `;
