@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TS Quiz Admin PRO</title>
+<title>TS Quiz Admin</title>
 
 <style>
 
@@ -59,11 +59,6 @@ font-size:20px;
 font-weight:bold;
 cursor:pointer;
 margin-top:10px;
-transition:0.2s;
-}
-
-button:hover{
-transform:scale(1.02);
 }
 
 .success{
@@ -78,7 +73,6 @@ background:#102c3d;
 padding:20px;
 border-radius:18px;
 margin-top:20px;
-animation:fade 0.4s;
 }
 
 .answer{
@@ -103,43 +97,14 @@ margin-top:15px;
 margin-bottom:15px;
 }
 
-.previewVideo{
-width:100%;
-height:300px;
-border:none;
-border-radius:16px;
-margin-top:15px;
-margin-bottom:15px;
-}
-
-.badge{
-display:inline-block;
-padding:8px 14px;
-border-radius:12px;
-font-size:14px;
-font-weight:bold;
-margin-right:10px;
-margin-top:10px;
-}
-
-.easy{
-background:#00c853;
-color:#051622;
-}
-
-.medium{
-background:#ffd600;
-color:#051622;
-}
-
-.hard{
-background:#ff5252;
-}
-
-.actions{
+.actionButtons{
 display:flex;
-gap:10px;
+gap:15px;
 margin-top:20px;
+}
+
+.editBtn{
+background:#ffc107;
 }
 
 .deleteBtn{
@@ -147,19 +112,8 @@ background:#ff5252;
 color:white;
 }
 
-.editBtn{
-background:#ffd54f;
-}
-
-@keyframes fade{
-from{
-opacity:0;
-transform:translateY(10px);
-}
-to{
-opacity:1;
-transform:translateY(0);
-}
+.smallInput{
+margin-top:15px;
 }
 
 </style>
@@ -173,62 +127,24 @@ transform:translateY(0);
 <div class="card">
 
 <h1>
-TS Quiz Admin PRO
+TS Quiz Admin
 </h1>
 
-<input
-id="category"
-placeholder="Categoría">
+<input id="category" placeholder="Categoría">
 
-<select id="difficulty">
+<input id="image" placeholder="URL de imagen">
 
-<option value="Fácil">
-Fácil
-</option>
+<input id="video" placeholder="URL YouTube">
 
-<option value="Media">
-Media
-</option>
+<input id="question" placeholder="Pregunta">
 
-<option value="Difícil">
-Difícil
-</option>
+<input id="answer1" placeholder="Respuesta 1">
 
-</select>
+<input id="answer2" placeholder="Respuesta 2">
 
-<input
-id="time"
-type="number"
-placeholder="Tiempo en segundos"
-value="15">
+<input id="answer3" placeholder="Respuesta 3">
 
-<input
-id="image"
-placeholder="URL de imagen">
-
-<input
-id="video"
-placeholder="URL video embed YouTube">
-
-<input
-id="question"
-placeholder="Pregunta">
-
-<input
-id="answer1"
-placeholder="Respuesta 1">
-
-<input
-id="answer2"
-placeholder="Respuesta 2">
-
-<input
-id="answer3"
-placeholder="Respuesta 3">
-
-<input
-id="answer4"
-placeholder="Respuesta 4">
+<input id="answer4" placeholder="Respuesta 4">
 
 <select id="correct">
 
@@ -249,6 +165,13 @@ Respuesta correcta: 4
 </option>
 
 </select>
+
+<input
+id="time"
+type="number"
+class="smallInput"
+placeholder="Tiempo en segundos"
+value="15">
 
 <button onclick="saveQuestion()">
 💾 GUARDAR PREGUNTA
@@ -309,20 +232,12 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
-window.editingId = null;
+let editingId = null;
 
 window.saveQuestion = function(){
 
 const category =
 document.getElementById("category").value;
-
-const difficulty =
-document.getElementById("difficulty").value;
-
-const time =
-parseInt(
-document.getElementById("time").value
-);
 
 const image =
 document.getElementById("image").value;
@@ -350,6 +265,11 @@ parseInt(
 document.getElementById("correct").value
 );
 
+const time =
+parseInt(
+document.getElementById("time").value
+) || 15;
+
 if(question.trim() === ""){
 
 alert("Escribe una pregunta");
@@ -358,13 +278,9 @@ return;
 
 }
 
-const questionData = {
+const payload = {
 
 category:category,
-
-difficulty:difficulty,
-
-time:time,
 
 image:image,
 
@@ -379,32 +295,31 @@ answer3,
 answer4
 ],
 
-correct:correct
+correct:correct,
+
+time:time
 
 };
 
-if(window.editingId){
+if(editingId){
 
 update(
-ref(
-db,
-'questions/' + window.editingId
-),
-questionData
+ref(db,'questions/' + editingId),
+payload
 );
+
+editingId = null;
 
 document.getElementById("success")
 .innerHTML =
-"✅ Pregunta actualizada";
-
-window.editingId = null;
+"✏️ Pregunta actualizada";
 
 }else{
 
 const questionRef =
 push(ref(db,'questions'));
 
-set(questionRef,questionData);
+set(questionRef,payload);
 
 document.getElementById("success")
 .innerHTML =
@@ -419,97 +334,78 @@ clearForm();
 function clearForm(){
 
 document.getElementById("category").value = "";
-document.getElementById("difficulty").value = "Fácil";
-document.getElementById("time").value = 15;
+
 document.getElementById("image").value = "";
+
 document.getElementById("video").value = "";
+
 document.getElementById("question").value = "";
+
 document.getElementById("answer1").value = "";
+
 document.getElementById("answer2").value = "";
+
 document.getElementById("answer3").value = "";
+
 document.getElementById("answer4").value = "";
-document.getElementById("correct").value = 0;
+
+document.getElementById("correct").value = "0";
+
+document.getElementById("time").value = "15";
 
 }
 
 window.deleteQuestion = function(id){
 
 const confirmDelete =
-confirm(
-"¿Eliminar esta pregunta?"
-);
+confirm("¿Eliminar esta pregunta?");
 
 if(!confirmDelete) return;
 
-remove(
-ref(db,'questions/' + id)
-);
+remove(ref(db,'questions/' + id));
 
 }
 
-window.editQuestion = function(id){
+window.editQuestion = function(id,data){
 
-const question =
-questionsCache[id];
+editingId = id;
 
-document.getElementById("category")
-.value =
-question.category || "";
+document.getElementById("category").value =
+data.category || "";
 
-document.getElementById("difficulty")
-.value =
-question.difficulty || "Fácil";
+document.getElementById("image").value =
+data.image || "";
 
-document.getElementById("time")
-.value =
-question.time || 15;
+document.getElementById("video").value =
+data.video || "";
 
-document.getElementById("image")
-.value =
-question.image || "";
+document.getElementById("question").value =
+data.question || "";
 
-document.getElementById("video")
-.value =
-question.video || "";
+document.getElementById("answer1").value =
+data.answers[0] || "";
 
-document.getElementById("question")
-.value =
-question.question || "";
+document.getElementById("answer2").value =
+data.answers[1] || "";
 
-document.getElementById("answer1")
-.value =
-question.answers[0] || "";
+document.getElementById("answer3").value =
+data.answers[2] || "";
 
-document.getElementById("answer2")
-.value =
-question.answers[1] || "";
+document.getElementById("answer4").value =
+data.answers[3] || "";
 
-document.getElementById("answer3")
-.value =
-question.answers[2] || "";
+document.getElementById("correct").value =
+data.correct || 0;
 
-document.getElementById("answer4")
-.value =
-question.answers[3] || "";
-
-document.getElementById("correct")
-.value =
-question.correct;
-
-window.editingId = id;
+document.getElementById("time").value =
+data.time || 15;
 
 window.scrollTo({
 top:0,
 behavior:"smooth"
 });
 
-document.getElementById("success")
-.innerHTML =
-"✏️ Editando pregunta";
-
 }
-
-let questionsCache = {};
 
 const questionsRef =
 ref(db,'questions');
@@ -517,8 +413,6 @@ ref(db,'questions');
 onValue(questionsRef,(snapshot)=>{
 
 const data = snapshot.val();
-
-questionsCache = data || {};
 
 const list =
 document.getElementById("questionsList");
@@ -571,23 +465,17 @@ if(question.video){
 
 videoHTML =
 `
-<iframe
-src="${question.video}"
-class="previewVideo"
-allowfullscreen>
-</iframe>
+<div style="
+margin-top:15px;
+padding:12px;
+background:#16384d;
+border-radius:12px;
+word-break:break-all;
+">
+🎬 ${question.video}
+</div>
 `;
 
-}
-
-let difficultyClass = "easy";
-
-if(question.difficulty === "Media"){
-difficultyClass = "medium";
-}
-
-if(question.difficulty === "Difícil"){
-difficultyClass = "hard";
 }
 
 list.innerHTML +=
@@ -603,39 +491,30 @@ ${question.question}
 </h3>
 
 <div style="margin-top:10px;">
+📚 ${question.category || "Sin categoría"}
+</div>
 
-<span class="badge ${difficultyClass}">
-${question.difficulty || "Fácil"}
-</span>
-
-<span class="badge">
-📚 ${question.category || "General"}
-</span>
-
-<span class="badge">
-⏱️ ${question.time || 15}s
-</span>
-
+<div style="margin-top:10px;">
+⏱️ ${question.time || 15} segundos
 </div>
 
 ${answersHTML}
 
-<div class="actions">
+<div class="actionButtons">
 
 <button
 class="editBtn"
-onclick="editQuestion('${id}')">
-
+onclick='editQuestion(
+"${id}",
+${JSON.stringify(question)}
+)'>
 ✏️ EDITAR
-
 </button>
 
 <button
 class="deleteBtn"
-onclick="deleteQuestion('${id}')">
-
+onclick='deleteQuestion("${id}")'>
 🗑️ ELIMINAR
-
 </button>
 
 </div>
