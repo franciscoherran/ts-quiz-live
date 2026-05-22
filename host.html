@@ -1,4 +1,690 @@
 <!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TS Quiz PRO MAX</title>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<style>
+
+body{
+margin:0;
+background:#051622;
+font-family:Arial;
+color:white;
+overflow-x:hidden;
+}
+
+.container{
+max-width:1200px;
+margin:auto;
+padding:30px;
+}
+
+.card{
+background:#0d2735;
+padding:30px;
+border-radius:24px;
+margin-top:30px;
+animation:fade 0.5s;
+}
+
+button{
+width:100%;
+padding:20px;
+border:none;
+border-radius:18px;
+background:#03b2ff;
+color:#051622;
+font-size:22px;
+font-weight:bold;
+cursor:pointer;
+margin-top:20px;
+transition:0.2s;
+}
+
+button:hover{
+transform:scale(1.02);
+}
+
+.roomCode{
+font-size:80px;
+text-align:center;
+font-weight:bold;
+color:#03b2ff;
+margin-top:20px;
+}
+
+#qrcode{
+display:flex;
+justify-content:center;
+margin-top:25px;
+}
+
+.joinText{
+text-align:center;
+margin-top:20px;
+font-size:24px;
+color:#88cbe7;
+}
+
+.player{
+background:#102c3d;
+padding:15px;
+border-radius:14px;
+margin-bottom:10px;
+font-size:20px;
+}
+
+#questionImage{
+width:100%;
+max-height:420px;
+object-fit:cover;
+border-radius:24px;
+margin-top:30px;
+display:none;
+}
+
+#questionVideo{
+display:none;
+margin-top:30px;
+border-radius:24px;
+border:none;
+}
+
+#questionBox{
+margin-top:30px;
+background:#102c3d;
+padding:25px;
+border-radius:20px;
+font-size:30px;
+text-align:center;
+}
+
+.answer{
+background:#16384d;
+padding:15px;
+border-radius:14px;
+margin-top:12px;
+font-size:22px;
+}
+
+.correct{
+background:#00c853 !important;
+}
+
+.counter{
+margin-top:25px;
+font-size:28px;
+text-align:center;
+color:#03b2ff;
+font-weight:bold;
+}
+
+.leader{
+background:#102c3d;
+padding:18px;
+border-radius:16px;
+margin-bottom:12px;
+display:flex;
+justify-content:space-between;
+font-size:22px;
+}
+
+.teamLeader{
+padding:20px;
+border-radius:18px;
+margin-bottom:15px;
+font-size:24px;
+font-weight:bold;
+display:flex;
+justify-content:space-between;
+}
+
+.teamAzul{background:#1976d2;}
+.teamRojo{background:#d32f2f;}
+.teamVerde{background:#2e7d32;}
+.teamAmarillo{background:#fdd835;color:#051622;}
+
+.timerBox{
+margin-top:25px;
+text-align:center;
+font-size:90px;
+font-weight:bold;
+color:#03b2ff;
+}
+
+.timeBar{
+width:100%;
+height:20px;
+background:#102c3d;
+border-radius:20px;
+overflow:hidden;
+margin-top:15px;
+}
+
+.timeFill{
+height:100%;
+width:100%;
+background:#03b2ff;
+transition:1s linear;
+}
+
+.statsGrid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+margin-top:30px;
+}
+
+.statCard{
+background:#102c3d;
+padding:25px;
+border-radius:20px;
+text-align:center;
+}
+
+.statNumber{
+font-size:48px;
+font-weight:bold;
+color:#03b2ff;
+margin-top:10px;
+}
+
+@keyframes fade{
+from{
+opacity:0;
+transform:translateY(20px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 style="text-align:center;font-size:60px;">
+TS Quiz PRO MAX
+</h1>
+
+<div class="card">
+
+<button onclick="createRoom()">
+🎮 CREAR SALA
+</button>
+
+<div id="roomArea" style="display:none;">
+
+<div class="roomCode" id="roomCode">
+000000
+</div>
+
+<div class="joinText">
+Escanea para entrar al juego
+</div>
+
+<div id="qrcode"></div>
+
+<div class="statsGrid">
+
+<div class="statCard">
+<div>👥 Jugadores</div>
+<div id="playersCount" class="statNumber">0</div>
+</div>
+
+<div class="statCard">
+<div>✅ Respuestas</div>
+<div id="answersCount" class="statNumber">0</div>
+</div>
+
+<div class="statCard">
+<div>🏆 Pregunta</div>
+<div id="questionCount" class="statNumber">0</div>
+</div>
+
+</div>
+
+<h2 style="margin-top:40px;">
+👥 Jugadores conectados
+</h2>
+
+<div id="playersList"></div>
+
+<button
+id="startGameBtn"
+onclick="startGame()"
+style="
+background:#00c853;
+color:#051622;
+font-size:28px;
+margin-top:40px;
+">
+
+▶️ INICIAR JUEGO
+
+</button>
+
+<div id="timer" class="timerBox">15</div>
+
+<div class="timeBar">
+<div id="timeFill" class="timeFill"></div>
+</div>
+
+<img id="questionImage" src="">
+
+<iframe
+id="questionVideo"
+width="100%"
+height="420"
+allowfullscreen>
+</iframe>
+
+<div id="questionBox">
+Esperando inicio del juego...
+</div>
+
+<div id="answersBox"></div>
+
+<div id="responseCounter" class="counter">
+0 respuestas
+</div>
+
+<div
+id="fastestPlayerBox"
+class="counter"
+style="font-size:32px;color:#ffd700;margin-top:10px;">
+
+⚡ Más rápido: -
+
+</div>
+
+<button onclick="nextQuestion()">
+➡️ SIGUIENTE PREGUNTA
+</button>
+
+<h2>🏅 Leaderboard</h2>
+
+<div id="leaderboard"></div>
+
+</div>
+
+</div>
+
+</div>
+
+<script type="module">
+
+import { db }
+from "./scripts/firebase.js";
+
+import {
+ref,
+set,
+remove,
+onValue,
+get,
+update
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+let questions = [];
+let currentQuestion = 0;
+let currentRoom = "";
+let timer = 15;
+let interval;
+
+let fastestPlayer = "";
+let fastestTime = 999;
+
+loadQuestions();
+
+async function loadQuestions(){
+
+const snapshot =
+await get(ref(db,'questions'));
+
+const data = snapshot.val();
+
+if(data){
+
+questions = Object.values(data);
+
+}
+
+}
+
+window.createRoom = function(){
+
+const code =
+Math.floor(
+100000 + Math.random() * 900000
+).toString();
+
+currentRoom = code;
+
+set(ref(db,'rooms/' + code),{
+active:true
+});
+
+document.getElementById("roomArea")
+.style.display = "block";
+
+document.getElementById("roomCode")
+.innerHTML = code;
+
+const playURL =
+window.location.origin +
+window.location.pathname
+.replace("host.html","play.html")
++ "?room=" + code;
+
+document.getElementById("qrcode")
+.innerHTML = "";
+
+new QRCode(
+document.getElementById("qrcode"),
+{
+text:playURL,
+width:220,
+height:220
+}
+);
+
+listenPlayers(code);
+listenResponses(code);
+
+}
+
+window.startGame = function(){
+
+document.getElementById(
+"startGameBtn"
+).style.display = "none";
+
+currentQuestion = 0;
+
+showQuestion();
+
+}
+
+function startTimer(){
+
+clearInterval(interval);
+
+timer =
+questions[currentQuestion].time || 15;
+
+document.getElementById("timer")
+.innerHTML = timer;
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:timer,
+active:true
+}
+);
+
+interval = setInterval(()=>{
+
+timer--;
+
+document.getElementById("timer")
+.innerHTML = timer;
+
+const percent =
+(
+timer
+/
+(questions[currentQuestion].time || 15)
+)
+*
+100;
+
+document.getElementById("timeFill")
+.style.width =
+percent + "%";
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:timer,
+active:true
+}
+);
+
+if(timer <= 0){
+
+clearInterval(interval);
+
+set(
+ref(db,'rooms/' + currentRoom + '/timer'),
+{
+time:0,
+active:false
+}
+);
+
+}
+
+},1000);
+
+}
+
+function showQuestion(){
+
+fastestPlayer = "";
+fastestTime = 999;
+
+document.getElementById(
+"fastestPlayerBox"
+).innerHTML =
+"⚡ Más rápido: -";
+
+remove(
+ref(
+db,
+'rooms/' + currentRoom + '/responses'
+)
+);
+
+const q =
+questions[currentQuestion];
+
+document.getElementById(
+"questionCount"
+).innerHTML =
+currentQuestion + 1;
+
+if(q.image){
+
+document.getElementById(
+"questionImage"
+).style.display = "block";
+
+document.getElementById(
+"questionImage"
+).src = q.image;
+
+}else{
+
+document.getElementById(
+"questionImage"
+).style.display = "none";
+
+}
+
+if(q.video){
+
+document.getElementById(
+"questionVideo"
+).style.display = "block";
+
+document.getElementById(
+"questionVideo"
+).src = q.video;
+
+}else{
+
+document.getElementById(
+"questionVideo"
+).style.display = "none";
+
+document.getElementById(
+"questionVideo"
+).src = "";
+
+}
+
+document.getElementById(
+"questionBox"
+).innerHTML =
+q.question;
+
+const answersBox =
+document.getElementById("answersBox");
+
+answersBox.innerHTML = "";
+
+q.answers.forEach((answer,index)=>{
+
+let className = "answer";
+
+if(index === q.correct){
+
+className += " correct";
+
+}
+
+answersBox.innerHTML +=
+`
+<div class="${className}">
+${answer}
+</div>
+`;
+
+});
+
+set(
+ref(
+db,
+'rooms/' + currentRoom + '/game'
+),
+q
+);
+
+startTimer();
+
+}
+
+window.nextQuestion = function(){
+
+currentQuestion++;
+
+if(currentQuestion >= questions.length){
+
+showFinalPodium();
+
+return;
+
+}
+
+showQuestion();
+
+}
+
+function listenPlayers(code){
+
+const playersRef =
+ref(db,'rooms/' + code + '/players');
+
+onValue(playersRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+const list =
+document.getElementById("playersList");
+
+list.innerHTML = "";
+
+let totalPlayers = 0;
+
+if(data){
+
+Object.values(data).forEach((player)=>{
+
+totalPlayers++;
+
+list.innerHTML +=
+`
+<div class="player">
+👤 ${player.name}
+— ${player.team || "Sin equipo"}
+— ${player.score || 0} pts
+</div>
+`;
+
+});
+
+}
+
+document.getElementById(
+"playersCount"
+).innerHTML =
+totalPlayers;
+
+});
+
+}
+
+function listenResponses(code){
+
+const responsesRef =
+ref(db,'rooms/' + code + '/responses');
+
+onValue(responsesRef,async(snapshot)=>{
+
+const data = snapshot.val();
+
+if(data){
+
+document.getElementById(
+"answersCount"
+).innerHTML =
+Object.keys(data).length;
+
+const playersSnap =
+await get(
+ref(db,'rooms/' + code + '/players')
+);
+
+const players = playersSnap.val();
+
+Object.values(data).forEach(response=>{
+
+const q =
+questions[currentQuestion];
+
+const responseSpeed =
+15 - response.timeLeft;
+
+if(responseSpeed < fastestTime){
+
+fastestTime = responseSpeed;
+
 fastestPlayer = response.player;
 
 document.getElementById(
@@ -31,7 +717,8 @@ score:
 +
 (response.timeLeft * 100),
 
-correct:(player.correct || 0) + 1
+correct:
+(player.correct || 0) + 1
 }
 );
 
@@ -43,7 +730,8 @@ db,
 'rooms/' + code + '/players/' + id
 ),
 {
-wrong:(player.wrong || 0) + 1
+wrong:
+(player.wrong || 0) + 1
 }
 );
 
@@ -55,13 +743,233 @@ wrong:(player.wrong || 0) + 1
 
 });
 
+updateLeaderboard(players);
+
 }
 
 });
 
 }
 
+function updateLeaderboard(players){
+
+if(!players) return;
+
+const leaderboard =
+document.getElementById("leaderboard");
+
+leaderboard.innerHTML = "";
+
+const sorted =
+Object.values(players)
+.sort((a,b)=>
+(b.score || 0)
+-
+(a.score || 0)
+);
+
+sorted.forEach((player,index)=>{
+
+leaderboard.innerHTML +=
+`
+<div class="leader">
+
+<div>
+${index + 1}. ${player.name}
+</div>
+
+<div>
+${player.score || 0} pts
+</div>
+
+</div>
+`;
+
+});
+
+}
+
+function showFinalPodium(){
+
+clearInterval(interval);
+
+document.getElementById(
+"questionBox"
+).innerHTML =
+"🏆 JUEGO FINALIZADO";
+
+document.getElementById(
+"questionImage"
+).style.display = "none";
+
+document.getElementById(
+"questionVideo"
+).style.display = "none";
+
+document.getElementById(
+"answersBox"
+).innerHTML = "";
+
+const playersRef =
+ref(db,'rooms/' + currentRoom + '/players');
+
+get(playersRef).then((snapshot)=>{
+
+const data = snapshot.val();
+
+if(!data) return;
+
+const sorted =
+Object.values(data)
+.sort((a,b)=>
+(b.score || 0)
+-
+(a.score || 0)
+);
+
+let podiumHTML =
+`
+<div style="
+display:grid;
+grid-template-columns:1fr 1fr 1fr;
+gap:20px;
+margin-top:40px;
+align-items:end;
+">
+`;
+
+const positions = [
+{
+emoji:"🥈",
+height:"220px"
+},
+{
+emoji:"🥇",
+height:"300px"
+},
+{
+emoji:"🥉",
+height:"180px"
+}
+];
+
+const podiumOrder = [
+sorted[1],
+sorted[0],
+sorted[2]
+];
+
+podiumOrder.forEach((player,index)=>{
+
+if(!player) return;
+
+podiumHTML +=
+`
+<div style="
+background:#102c3d;
+border-radius:24px;
+padding:20px;
+text-align:center;
+height:${positions[index].height};
+display:flex;
+flex-direction:column;
+justify-content:center;
+">
+
+<div style="font-size:60px;">
+${positions[index].emoji}
+</div>
+
+<div style="
+font-size:30px;
+font-weight:bold;
+margin-top:20px;
+">
+${player.name}
+</div>
+
+<div style="
+font-size:24px;
+color:#03b2ff;
+margin-top:10px;
+">
+${player.score || 0} pts
+</div>
+
+</div>
+`;
+
+});
+
+podiumHTML += `</div>`;
+
+document.getElementById(
+"leaderboard"
+).innerHTML = podiumHTML;
+
+confetti({
+particleCount:300,
+spread:120
+});
+
+});
+
+document.getElementById(
+"responseCounter"
+).innerHTML =
+"🎉 Fin del juego";
+
+document.getElementById(
+"fastestPlayerBox"
+).innerHTML =
+"";
+
+document.getElementById(
+"answersBox"
+).innerHTML +=
+`
+<button
+onclick="restartGame()"
+style="background:#03b2ff;">
+
+🔁 JUGAR OTRA VEZ
+
+</button>
+
+<button
+onclick="finishGame()"
+style="
+background:#ff5252;
+color:white;
+">
+
+🛑 FINALIZAR JUEGO
+
+</button>
+`;
+
+}
+
+window.restartGame = function(){
+
+currentQuestion = 0;
+
+showQuestion();
+
+}
+
+window.finishGame = function(){
+
+remove(
+ref(db,'rooms/' + currentRoom)
+);
+
+location.reload();
+
+}
+
 </script>
 
 </body>
+
 </html>
