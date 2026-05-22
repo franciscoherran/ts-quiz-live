@@ -488,7 +488,10 @@ currentRoom +
 set(responseRef,{
 player:currentPlayer,
 team:currentTeam,
-answer:answer
+answer:answer,
+timeLeft:parseInt(
+document.getElementById("timer").innerHTML
+)
 });
 
 disableButtons();

@@ -968,7 +968,11 @@ code +
 id
 ),
 {
-score:(player.score || 0) + 100,
+score:
+(player.score || 0)
++
+(response.timeLeft * 100),
+
 correct:(player.correct || 0) + 1
 }
 );
