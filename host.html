@@ -473,11 +473,10 @@ class="podiumContainer">
 
 <script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { db }
+from "./scripts/firebase.js";
 
 import {
-getDatabase,
 ref,
 set,
 remove,
@@ -486,30 +485,6 @@ get,
 update
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
-
-const firebaseConfig = {
-
-apiKey: "AIzaSyBzMS3vAgZbvDpMoKGbALPcBl_oBIayDfc",
-
-authDomain: "ts-quiz-live.firebaseapp.com",
-
-databaseURL: "https://ts-quiz-live-default-rtdb.firebaseio.com",
-
-projectId: "ts-quiz-live",
-
-storageBucket: "ts-quiz-live.firebasestorage.app",
-
-messagingSenderId: "1008762047515",
-
-appId: "1:1008762047515:web:d848a84da0ef965ce1fcbe",
-
-measurementId: "G-MZENY9GPQ7"
-
-};
-
-const app = initializeApp(firebaseConfig);
-
-const db = getDatabase(app);
 
 const tickSound =
 new Audio(
@@ -688,12 +663,28 @@ Object.keys(data).length;
 
 Object.values(data).forEach((player)=>{
 
+const totalAnswers =
+(player.correct || 0) +
+(player.wrong || 0);
+
+let accuracy = 0;
+
+if(totalAnswers > 0){
+
+accuracy =
+Math.round(
+((player.correct || 0) / totalAnswers) * 100
+);
+
+}
+
 list.innerHTML +=
 `
 <div class="player">
 👤 ${player.name}
 — ${player.team || "Sin equipo"}
 — ${player.score || 0} pts
+— 🎯 ${accuracy}%
 </div>
 `;
 
@@ -895,11 +886,11 @@ total++;
 const q =
 questions[currentQuestion];
 
-if(response.answer === q.correct){
-
 Object.entries(players).forEach(([id,player])=>{
 
 if(player.name === response.player){
+
+if(response.answer === q.correct){
 
 update(
 ref(
@@ -910,15 +901,31 @@ code +
 id
 ),
 {
-score:(player.score || 0) + 100
+score:(player.score || 0) + 100,
+correct:(player.correct || 0) + 1
+}
+);
+
+}else{
+
+update(
+ref(
+db,
+'rooms/' +
+code +
+'/players/' +
+id
+),
+{
+wrong:(player.wrong || 0) + 1
 }
 );
 
 }
 
-});
-
 }
+
+});
 
 });
 
@@ -947,6 +954,21 @@ Object.values(players)
 
 sorted.slice(0,10).forEach((player,index)=>{
 
+const totalAnswers =
+(player.correct || 0) +
+(player.wrong || 0);
+
+let accuracy = 0;
+
+if(totalAnswers > 0){
+
+accuracy =
+Math.round(
+((player.correct || 0) / totalAnswers) * 100
+);
+
+}
+
 leaderboard.innerHTML +=
 `
 <div class="leader">
@@ -957,6 +979,7 @@ ${index + 1}. 👤 ${player.name}
 
 <div>
 ${player.score || 0} pts
+— 🎯 ${accuracy}%
 </div>
 
 </div>
