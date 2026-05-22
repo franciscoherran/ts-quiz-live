@@ -274,6 +274,7 @@ margin-top:40px;
 id="questionVideo"
 width="100%"
 height="420"
+allow="autoplay"
 allowfullscreen>
 </iframe>
 
@@ -524,23 +525,31 @@ document.getElementById(
 
 let videoURL = q.video;
 
-if(videoURL.includes("watch?v=")){
+if(videoURL.includes("youtube.com/watch?v=")){
+
+const videoId =
+videoURL.split("v=")[1].split("&")[0];
 
 videoURL =
-videoURL.replace(
-"watch?v=",
-"embed/"
-);
+"https://www.youtube.com/embed/"
++
+videoId
++
+"?autoplay=1";
 
 }
 
-if(videoURL.includes("youtu.be/")){
+else if(videoURL.includes("youtu.be/")){
+
+const videoId =
+videoURL.split("youtu.be/")[1].split("?")[0];
 
 videoURL =
-videoURL.replace(
-"youtu.be/",
 "https://www.youtube.com/embed/"
-);
++
+videoId
++
+"?autoplay=1";
 
 }
 
