@@ -434,6 +434,78 @@ class="counter">
 </button>
 
 <div
+id="finalStats"
+class="card"
+style="display:none;">
+
+<h2 style="text-align:center;font-size:50px;">
+📊 Estadísticas Finales
+</h2>
+
+<div class="statsGrid">
+
+<div class="statCard">
+<div>🥇 MVP</div>
+<div
+id="mvpName"
+class="statNumber"
+style="font-size:28px;">
+-
+</div>
+</div>
+
+<div class="statCard">
+<div>🎯 Mejor Accuracy</div>
+<div
+id="bestAccuracy"
+class="statNumber"
+style="font-size:28px;">
+0%
+</div>
+</div>
+
+<div class="statCard">
+<div>👥 Equipo Ganador</div>
+<div
+id="winnerTeam"
+class="statNumber"
+style="font-size:28px;">
+-
+</div>
+</div>
+
+<div class="statCard">
+<div>✅ Correctas</div>
+<div
+id="correctTotal"
+class="statNumber">
+0
+</div>
+</div>
+
+<div class="statCard">
+<div>❌ Incorrectas</div>
+<div
+id="wrongTotal"
+class="statNumber">
+0
+</div>
+</div>
+
+<div class="statCard">
+<div>📊 Respuestas</div>
+<div
+id="answersTotal"
+class="statNumber">
+0
+</div>
+</div>
+
+</div>
+
+</div>
+
+<div
 id="podium"
 class="podiumContainer">
 
@@ -459,8 +531,6 @@ class="podiumContainer">
 <div class="medal">🥉</div>
 <div id="thirdName" class="playerName">-</div>
 <div id="thirdScore" class="playerScore">0 pts</div>
-</div>
-
 </div>
 
 </div>
@@ -497,7 +567,6 @@ new Audio(
 );
 
 let questions = [];
-
 let currentQuestion = 0;
 let currentRoom = "";
 let timer = 15;
@@ -560,9 +629,7 @@ height:220
 );
 
 listenPlayers(code);
-
 listenResponses(code);
-
 showQuestion();
 
 }
@@ -1009,6 +1076,9 @@ Object.values(players)
 document.getElementById("podium")
 .style.display = "block";
 
+document.getElementById("finalStats")
+.style.display = "block";
+
 podiumSound.play();
 
 confetti({
@@ -1025,6 +1095,10 @@ sorted[0].name;
 document.getElementById("firstScore")
 .innerHTML =
 (sorted[0].score || 0) + " pts";
+
+document.getElementById("mvpName")
+.innerHTML =
+sorted[0].name;
 
 }
 
@@ -1051,6 +1125,85 @@ document.getElementById("thirdScore")
 (sorted[2].score || 0) + " pts";
 
 }
+
+let bestAccuracy = 0;
+let bestPlayer = "";
+
+let correctTotal = 0;
+let wrongTotal = 0;
+
+const teams = {
+Azul:0,
+Rojo:0,
+Verde:0,
+Amarillo:0
+};
+
+sorted.forEach(player=>{
+
+correctTotal +=
+player.correct || 0;
+
+wrongTotal +=
+player.wrong || 0;
+
+teams[player.team] +=
+player.score || 0;
+
+const total =
+(player.correct || 0)
++
+(player.wrong || 0);
+
+let accuracy = 0;
+
+if(total > 0){
+
+accuracy =
+Math.round(
+((player.correct || 0)
+/
+total)
+* 100
+);
+
+}
+
+if(accuracy > bestAccuracy){
+
+bestAccuracy = accuracy;
+bestPlayer = player.name;
+
+}
+
+});
+
+document.getElementById("bestAccuracy")
+.innerHTML =
+bestPlayer +
+" (" +
+bestAccuracy +
+"%)";
+
+const winner =
+Object.entries(teams)
+.sort((a,b)=>b[1]-a[1])[0];
+
+document.getElementById("winnerTeam")
+.innerHTML =
+winner[0];
+
+document.getElementById("correctTotal")
+.innerHTML =
+correctTotal;
+
+document.getElementById("wrongTotal")
+.innerHTML =
+wrongTotal;
+
+document.getElementById("answersTotal")
+.innerHTML =
+correctTotal + wrongTotal;
 
 });
 
