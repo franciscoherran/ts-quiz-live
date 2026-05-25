@@ -35,8 +35,7 @@ font-size:50px;
 margin-bottom:30px;
 }
 
-input,
-select{
+input,select{
 width:100%;
 padding:18px;
 border:none;
@@ -97,23 +96,15 @@ margin-top:15px;
 margin-bottom:15px;
 }
 
-.actionButtons{
-display:flex;
-gap:15px;
+.deleteBtn{
+background:#ff5252;
 margin-top:20px;
 }
 
 .editBtn{
-background:#ffc107;
-}
-
-.deleteBtn{
-background:#ff5252;
-color:white;
-}
-
-.smallInput{
-margin-top:15px;
+background:#ffd600;
+color:#051622;
+margin-top:10px;
 }
 
 </style>
@@ -134,8 +125,6 @@ TS Quiz Admin
 
 <input id="image" placeholder="URL de imagen">
 
-<input id="video" placeholder="URL YouTube">
-
 <input id="question" placeholder="Pregunta">
 
 <input id="answer1" placeholder="Respuesta 1">
@@ -145,6 +134,12 @@ TS Quiz Admin
 <input id="answer3" placeholder="Respuesta 3">
 
 <input id="answer4" placeholder="Respuesta 4">
+
+<input
+id="time"
+type="number"
+placeholder="Tiempo en segundos"
+value="15">
 
 <select id="correct">
 
@@ -166,15 +161,8 @@ Respuesta correcta: 4
 
 </select>
 
-<input
-id="time"
-type="number"
-class="smallInput"
-placeholder="Tiempo en segundos"
-value="15">
-
 <button onclick="saveQuestion()">
-💾 GUARDAR PREGUNTA
+GUARDAR PREGUNTA
 </button>
 
 <div
@@ -185,7 +173,7 @@ class="success">
 </div>
 
 <h2 style="margin-top:40px;">
-📚 Preguntas guardadas
+Preguntas guardadas
 </h2>
 
 <div id="questionsList"></div>
@@ -194,11 +182,10 @@ class="success">
 
 <script type="module">
 
-import { initializeApp }
-from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { db }
+from "./scripts/firebase.js";
 
 import {
-getDatabase,
 ref,
 push,
 set,
@@ -208,42 +195,15 @@ update
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-const firebaseConfig = {
-
-apiKey: "AIzaSyBzMS3vAgZbvDpMoKGbALPcBl_oBIayDfc",
-
-authDomain: "ts-quiz-live.firebaseapp.com",
-
-databaseURL: "https://ts-quiz-live-default-rtdb.firebaseio.com",
-
-projectId: "ts-quiz-live",
-
-storageBucket: "ts-quiz-live.firebasestorage.app",
-
-messagingSenderId: "1008762047515",
-
-appId: "1:1008762047515:web:d848a84da0ef965ce1fcbe",
-
-measurementId: "G-MZENY9GPQ7"
-
-};
-
-const app = initializeApp(firebaseConfig);
-
-const db = getDatabase(app);
-
 let editingId = null;
 
-window.saveQuestion = function(){
+window.saveQuestion = async function(){
 
 const category =
 document.getElementById("category").value;
 
 const image =
 document.getElementById("image").value;
-
-const video =
-document.getElementById("video").value;
 
 const question =
 document.getElementById("question").value;
@@ -260,15 +220,15 @@ document.getElementById("answer3").value;
 const answer4 =
 document.getElementById("answer4").value;
 
+const time =
+parseInt(
+document.getElementById("time").value
+);
+
 const correct =
 parseInt(
 document.getElementById("correct").value
 );
-
-const time =
-parseInt(
-document.getElementById("time").value
-) || 15;
 
 if(question.trim() === ""){
 
@@ -278,13 +238,11 @@ return;
 
 }
 
-const payload = {
+const questionData = {
 
 category:category,
 
 image:image,
-
-video:video,
 
 question:question,
 
@@ -295,17 +253,17 @@ answer3,
 answer4
 ],
 
-correct:correct,
+time:time,
 
-time:time
+correct:correct
 
 };
 
 if(editingId){
 
-update(
+await update(
 ref(db,'questions/' + editingId),
-payload
+questionData
 );
 
 editingId = null;
@@ -319,7 +277,7 @@ document.getElementById("success")
 const questionRef =
 push(ref(db,'questions'));
 
-set(questionRef,payload);
+await set(questionRef,questionData);
 
 document.getElementById("success")
 .innerHTML =
@@ -334,35 +292,27 @@ clearForm();
 function clearForm(){
 
 document.getElementById("category").value = "";
-
 document.getElementById("image").value = "";
-
-document.getElementById("video").value = "";
-
 document.getElementById("question").value = "";
-
 document.getElementById("answer1").value = "";
-
 document.getElementById("answer2").value = "";
-
 document.getElementById("answer3").value = "";
-
 document.getElementById("answer4").value = "";
-
-document.getElementById("correct").value = "0";
-
 document.getElementById("time").value = "15";
+document.getElementById("correct").value = "0";
 
 }
 
-window.deleteQuestion = function(id){
+window.deleteQuestion = async function(id){
 
 const confirmDelete =
-confirm("¿Eliminar esta pregunta?");
+confirm("¿Eliminar pregunta?");
 
 if(!confirmDelete) return;
 
-remove(ref(db,'questions/' + id));
+await remove(
+ref(db,'questions/' + id)
+);
 
 }
 
@@ -370,35 +320,32 @@ window.editQuestion = function(id,data){
 
 editingId = id;
 
-document.getElementById("category").value =
-data.category || "";
+document.getElementById("category")
+.value = data.category || "";
 
-document.getElementById("image").value =
-data.image || "";
+document.getElementById("image")
+.value = data.image || "";
 
-document.getElementById("video").value =
-data.video || "";
+document.getElementById("question")
+.value = data.question || "";
 
-document.getElementById("question").value =
-data.question || "";
+document.getElementById("answer1")
+.value = data.answers[0] || "";
 
-document.getElementById("answer1").value =
-data.answers[0] || "";
+document.getElementById("answer2")
+.value = data.answers[1] || "";
 
-document.getElementById("answer2").value =
-data.answers[1] || "";
+document.getElementById("answer3")
+.value = data.answers[2] || "";
 
-document.getElementById("answer3").value =
-data.answers[2] || "";
+document.getElementById("answer4")
+.value = data.answers[3] || "";
 
-document.getElementById("answer4").value =
-data.answers[3] || "";
+document.getElementById("time")
+.value = data.time || 15;
 
-document.getElementById("correct").value =
-data.correct || 0;
-
-document.getElementById("time").value =
-data.time || 15;
+document.getElementById("correct")
+.value = data.correct;
 
 window.scrollTo({
 top:0,
@@ -459,38 +406,17 @@ class="previewImage">
 
 }
 
-let videoHTML = "";
-
-if(question.video){
-
-videoHTML =
-`
-<div style="
-margin-top:15px;
-padding:12px;
-background:#16384d;
-border-radius:12px;
-word-break:break-all;
-">
-🎬 ${question.video}
-</div>
-`;
-
-}
-
 list.innerHTML +=
 `
 <div class="questionCard">
 
 ${imageHTML}
 
-${videoHTML}
-
 <h3>
 ${question.question}
 </h3>
 
-<div style="margin-top:10px;">
+<div>
 📚 ${question.category || "Sin categoría"}
 </div>
 
@@ -499,8 +425,6 @@ ${question.question}
 </div>
 
 ${answersHTML}
-
-<div class="actionButtons">
 
 <button
 class="editBtn"
@@ -518,8 +442,6 @@ onclick='deleteQuestion("${id}")'>
 </button>
 
 </div>
-
-</div>
 `;
 
 });
@@ -531,5 +453,4 @@ onclick='deleteQuestion("${id}")'>
 </script>
 
 </body>
-
 </html>
