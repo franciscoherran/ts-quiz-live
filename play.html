@@ -2,11 +2,14 @@
 <html lang="es">
 
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>TS Quiz Player</title>
 
 <style>
+
 body{
 margin:0;
 background:#051622;
@@ -62,22 +65,6 @@ background:#00c853 !important;
 color:#051622 !important;
 }
 
-#questionImage{
-width:100%;
-max-height:320px;
-object-fit:cover;
-border-radius:20px;
-margin-bottom:20px;
-display:none;
-}
-
-#questionVideo{
-display:none;
-margin-bottom:20px;
-border-radius:20px;
-border:none;
-}
-
 .question{
 font-size:30px;
 text-align:center;
@@ -91,6 +78,16 @@ font-size:70px;
 font-weight:bold;
 color:#03b2ff;
 }
+
+#questionImage{
+width:100%;
+max-height:320px;
+object-fit:cover;
+border-radius:20px;
+margin-bottom:20px;
+display:none;
+}
+
 </style>
 
 </head>
@@ -105,14 +102,28 @@ color:#03b2ff;
 TS Quiz PRO
 </h1>
 
-<input id="roomCode" placeholder="Código de sala">
+<input id="roomCode" placeholder="Código sala">
+
 <input id="playerName" placeholder="Tu nombre">
 
 <select id="team">
-<option value="Azul">🔵 Equipo Azul</option>
-<option value="Rojo">🔴 Equipo Rojo</option>
-<option value="Verde">🟢 Equipo Verde</option>
-<option value="Amarillo">🟡 Equipo Amarillo</option>
+
+<option value="Azul">
+🔵 Equipo Azul
+</option>
+
+<option value="Rojo">
+🔴 Equipo Rojo
+</option>
+
+<option value="Verde">
+🟢 Equipo Verde
+</option>
+
+<option value="Amarillo">
+🟡 Equipo Amarillo
+</option>
+
 </select>
 
 <button onclick="joinRoom()">
@@ -123,18 +134,13 @@ ENTRAR
 
 <div id="gameArea" style="display:none;">
 
-<div class="timer" id="timer">15</div>
+<div class="timer" id="timer">
+15
+</div>
 
 <div class="card">
 
 <img id="questionImage" src="">
-
-<iframe
-id="questionVideo"
-width="100%"
-height="260"
-allowfullscreen>
-</iframe>
 
 <div id="question" class="question">
 Esperando pregunta...
@@ -157,16 +163,18 @@ import {
 ref,
 set,
 push,
-onValue
+onValue,
+get,
+update
 }
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 let currentRoom = "";
 let currentPlayer = "";
-let currentTeam = "";
 let answered = false;
+let playerId = "";
 
-window.joinRoom = function(){
+window.joinRoom = async function(){
 
 const code =
 document.getElementById("roomCode")
@@ -182,7 +190,6 @@ document.getElementById("team")
 
 currentRoom = code;
 currentPlayer = name;
-currentTeam = team;
 
 const playerRef =
 push(
@@ -192,12 +199,12 @@ db,
 )
 );
 
+playerId = playerRef.key;
+
 set(playerRef,{
 name:name,
 team:team,
-score:0,
-correct:0,
-wrong:0
+score:0
 });
 
 document.getElementById("gameArea")
@@ -225,7 +232,8 @@ if(data){
 answered = false;
 
 document.getElementById("question")
-.innerHTML = data.question;
+.innerHTML =
+data.question;
 
 if(data.image){
 
@@ -239,24 +247,6 @@ document.getElementById("questionImage")
 
 document.getElementById("questionImage")
 .style.display = "none";
-
-}
-
-if(data.video){
-
-document.getElementById("questionVideo")
-.style.display = "block";
-
-document.getElementById("questionVideo")
-.src = data.video;
-
-}else{
-
-document.getElementById("questionVideo")
-.style.display = "none";
-
-document.getElementById("questionVideo")
-.src = "";
 
 }
 
@@ -302,7 +292,9 @@ document.getElementById("timer")
 .innerHTML = data.time;
 
 if(!data.active){
+
 disableButtons();
+
 }
 
 }
@@ -311,7 +303,7 @@ disableButtons();
 
 }
 
-window.sendAnswer = function(answer,button){
+window.sendAnswer = async function(answer,button){
 
 if(answered) return;
 
@@ -319,22 +311,46 @@ answered = true;
 
 button.classList.add("success");
 
-const responseRef =
-push(
+const gameSnapshot =
+await get(
 ref(
 db,
-'rooms/' + currentRoom + '/responses'
+'rooms/' + currentRoom + '/game'
 )
 );
 
-set(responseRef,{
-player:currentPlayer,
-team:currentTeam,
-answer:answer,
-timeLeft:parseInt(
-document.getElementById("timer").innerHTML
+const game =
+gameSnapshot.val();
+
+if(answer === game.correct){
+
+const playerSnapshot =
+await get(
+ref(
+db,
+'rooms/' + currentRoom + '/players/' + playerId
 )
-});
+);
+
+const player =
+playerSnapshot.val();
+
+update(
+ref(
+db,
+'rooms/' + currentRoom + '/players/' + playerId
+),
+{
+score:
+(player.score || 0)
++
+(parseInt(
+document.getElementById("timer").innerHTML
+) * 100)
+}
+);
+
+}
 
 disableButtons();
 
@@ -346,8 +362,10 @@ const buttons =
 document.querySelectorAll(".answerBtn");
 
 buttons.forEach(button=>{
+
 button.disabled = true;
-button.style.opacity = 0.6;
+button.style.opacity = 0.5;
+
 });
 
 }
