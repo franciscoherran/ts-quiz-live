@@ -45,6 +45,11 @@ font-size:22px;
 font-weight:bold;
 cursor:pointer;
 margin-top:20px;
+transition:0.2s;
+}
+
+button:hover{
+transform:scale(1.02);
 }
 
 .roomCode{
@@ -106,24 +111,6 @@ font-size:22px;
 background:#00c853 !important;
 }
 
-.counter{
-margin-top:25px;
-font-size:28px;
-text-align:center;
-color:#03b2ff;
-font-weight:bold;
-}
-
-.leader{
-background:#102c3d;
-padding:18px;
-border-radius:16px;
-margin-bottom:12px;
-display:flex;
-justify-content:space-between;
-font-size:22px;
-}
-
 .timerBox{
 margin-top:25px;
 text-align:center;
@@ -143,9 +130,23 @@ margin-top:15px;
 
 .timeFill{
 height:100%;
-width:100%;
 background:#03b2ff;
+width:100%;
 transition:1s linear;
+}
+
+.leader{
+background:#102c3d;
+padding:18px;
+border-radius:16px;
+margin-bottom:12px;
+display:flex;
+justify-content:space-between;
+font-size:22px;
+}
+
+.hidden{
+display:none;
 }
 
 </style>
@@ -166,7 +167,7 @@ TS Quiz PRO MAX
 🎮 CREAR SALA
 </button>
 
-<div id="roomArea" style="display:none;">
+<div id="roomArea" class="hidden">
 
 <div class="roomCode" id="roomCode">
 000000
@@ -185,16 +186,13 @@ Escanea para entrar al juego
 <div id="playersList"></div>
 
 <button
-id="startGameBtn"
+id="startBtn"
 onclick="startGame()"
-style="
-background:#00c853;
-font-size:28px;
-">
-
+style="background:#00c853;">
 ▶️ INICIAR JUEGO
-
 </button>
+
+<div id="gameArea" class="hidden">
 
 <div id="timer" class="timerBox">15</div>
 
@@ -210,15 +208,9 @@ Esperando inicio del juego...
 
 <div id="answersBox"></div>
 
-<div id="responseCounter" class="counter">
-0 respuestas
-</div>
-
-<button onclick="nextQuestion()">
-➡️ SIGUIENTE PREGUNTA
-</button>
-
-<h2>🏅 Leaderboard</h2>
+<h2 style="margin-top:40px;">
+🏆 Leaderboard
+</h2>
 
 <div id="leaderboard"></div>
 
@@ -228,6 +220,411 @@ Esperando inicio del juego...
 
 </div>
 
-</body>
+</div>
 
+<script type="module">
+
+import { db }
+from "./scripts/firebase.js";
+
+import {
+ref,
+set,
+get,
+update,
+remove,
+onValue
+}
+from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+let questions = [];
+let currentQuestion = 0;
+let currentRoom = "";
+let timer = 15;
+let interval;
+
+async function loadQuestions(){
+
+try{
+
+const snapshot =
+await get(ref(db,'questions'));
+
+const data = snapshot.val();
+
+console.log("Preguntas Firebase:", data);
+
+if(data){
+
+questions =
+Object.values(data);
+
+console.log(
+"Preguntas cargadas:",
+questions
+);
+
+}else{
+
+questions = [];
+
+alert(
+"No hay preguntas creadas en admin.html"
+);
+
+}
+
+}catch(error){
+
+console.error(error);
+
+alert(
+"Error cargando preguntas"
+);
+
+}
+
+}
+
+loadQuestions();
+
+window.createRoom = async function(){
+
+if(questions.length === 0){
+
+alert(
+"No hay preguntas cargadas"
+);
+
+return;
+
+}
+
+const code =
+Math.floor(
+100000 + Math.random() * 900000
+).toString();
+
+currentRoom = code;
+
+await set(
+ref(db,'rooms/' + code),
+{
+active:true
+}
+);
+
+document.getElementById("roomArea")
+.classList.remove("hidden");
+
+document.getElementById("roomCode")
+.innerHTML = code;
+
+document.getElementById("qrcode")
+.innerHTML = "";
+
+const playURL =
+window.location.origin
++
+window.location.pathname.replace(
+"host.html",
+"play.html"
+)
++
+"?room=" + code;
+
+new QRCode(
+document.getElementById("qrcode"),
+{
+text:playURL,
+width:220,
+height:220
+}
+);
+
+listenPlayers();
+
+}
+
+window.startGame = function(){
+
+document.getElementById("startBtn")
+.style.display = "none";
+
+document.getElementById("gameArea")
+.classList.remove("hidden");
+
+currentQuestion = 0;
+
+showQuestion();
+
+}
+
+function showQuestion(){
+
+const q =
+questions[currentQuestion];
+
+if(!q){
+
+finishGame();
+
+return;
+
+}
+
+remove(
+ref(
+db,
+'rooms/' + currentRoom + '/responses'
+)
+);
+
+document.getElementById("questionBox")
+.innerHTML =
+q.question;
+
+if(q.image){
+
+document.getElementById("questionImage")
+.style.display = "block";
+
+document.getElementById("questionImage")
+.src = q.image;
+
+}else{
+
+document.getElementById("questionImage")
+.style.display = "none";
+
+}
+
+const answersBox =
+document.getElementById("answersBox");
+
+answersBox.innerHTML = "";
+
+q.answers.forEach((answer,index)=>{
+
+let className = "answer";
+
+if(index === q.correct){
+
+className += " correct";
+
+}
+
+answersBox.innerHTML +=
+`
+<div class="${className}">
+${answer}
+</div>
+`;
+
+});
+
+set(
+ref(
+db,
+'rooms/' + currentRoom + '/game'
+),
+{
+question:q.question,
+answers:q.answers,
+correct:q.correct,
+image:q.image || "",
+time:q.time || 15
+}
+);
+
+startTimer();
+
+}
+
+function startTimer(){
+
+clearInterval(interval);
+
+timer =
+questions[currentQuestion].time || 15;
+
+document.getElementById("timer")
+.innerHTML = timer;
+
+document.getElementById("timeFill")
+.style.width = "100%";
+
+interval = setInterval(()=>{
+
+timer--;
+
+document.getElementById("timer")
+.innerHTML = timer;
+
+const percent =
+(timer /
+(questions[currentQuestion].time || 15))
+* 100;
+
+document.getElementById("timeFill")
+.style.width =
+percent + "%";
+
+set(
+ref(
+db,
+'rooms/' + currentRoom + '/timer'
+),
+{
+time:timer,
+active:true
+}
+);
+
+if(timer <= 0){
+
+clearInterval(interval);
+
+set(
+ref(
+db,
+'rooms/' + currentRoom + '/timer'
+),
+{
+time:0,
+active:false
+}
+);
+
+setTimeout(()=>{
+
+nextQuestion();
+
+},3000);
+
+}
+
+},1000);
+
+}
+
+window.nextQuestion = function(){
+
+currentQuestion++;
+
+if(currentQuestion >= questions.length){
+
+finishGame();
+
+return;
+
+}
+
+showQuestion();
+
+}
+
+function listenPlayers(){
+
+const playersRef =
+ref(
+db,
+'rooms/' + currentRoom + '/players'
+);
+
+onValue(playersRef,(snapshot)=>{
+
+const data = snapshot.val();
+
+const list =
+document.getElementById("playersList");
+
+list.innerHTML = "";
+
+if(data){
+
+Object.values(data).forEach((player)=>{
+
+list.innerHTML +=
+`
+<div class="player">
+👤 ${player.name}
+- ${player.score || 0} pts
+</div>
+`;
+
+});
+
+updateLeaderboard(data);
+
+}
+
+});
+
+}
+
+function updateLeaderboard(players){
+
+const leaderboard =
+document.getElementById("leaderboard");
+
+leaderboard.innerHTML = "";
+
+const sorted =
+Object.values(players)
+.sort((a,b)=>
+(b.score || 0)
+-
+(a.score || 0)
+);
+
+sorted.forEach((player,index)=>{
+
+leaderboard.innerHTML +=
+`
+<div class="leader">
+
+<div>
+${index + 1}. ${player.name}
+</div>
+
+<div>
+${player.score || 0} pts
+</div>
+
+</div>
+`;
+
+});
+
+}
+
+function finishGame(){
+
+clearInterval(interval);
+
+document.getElementById("questionBox")
+.innerHTML =
+"🏆 JUEGO FINALIZADO";
+
+document.getElementById("answersBox")
+.innerHTML =
+`
+<button
+onclick="location.reload()"
+style="background:#00c853;">
+🔁 NUEVO JUEGO
+</button>
+`;
+
+confetti({
+particleCount:300,
+spread:120
+});
+
+}
+
+</script>
+
+</body>
 </html>
