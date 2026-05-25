@@ -88,6 +88,10 @@ margin-bottom:20px;
 display:none;
 }
 
+.hidden{
+display:none;
+}
+
 </style>
 
 </head>
@@ -102,9 +106,13 @@ display:none;
 TS Quiz PRO
 </h1>
 
-<input id="roomCode" placeholder="Código sala">
+<input
+id="roomCode"
+placeholder="Código sala">
 
-<input id="playerName" placeholder="Tu nombre">
+<input
+id="playerName"
+placeholder="Tu nombre">
 
 <select id="team">
 
@@ -132,7 +140,7 @@ ENTRAR
 
 </div>
 
-<div id="gameArea" style="display:none;">
+<div id="gameArea" class="hidden">
 
 <div class="timer" id="timer">
 15
@@ -170,9 +178,26 @@ update
 from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
 let currentRoom = "";
-let currentPlayer = "";
 let answered = false;
 let playerId = "";
+
+const params =
+new URLSearchParams(
+window.location.search
+);
+
+const roomFromQR =
+params.get("room");
+
+if(roomFromQR){
+
+document.getElementById("roomCode")
+.value = roomFromQR;
+
+document.getElementById("roomCode")
+.style.display = "none";
+
+}
 
 window.joinRoom = async function(){
 
@@ -188,8 +213,15 @@ const team =
 document.getElementById("team")
 .value;
 
+if(name.trim() === ""){
+
+alert("Escribe tu nombre");
+
+return;
+
+}
+
 currentRoom = code;
-currentPlayer = name;
 
 const playerRef =
 push(
@@ -201,14 +233,17 @@ db,
 
 playerId = playerRef.key;
 
-set(playerRef,{
+await set(playerRef,{
 name:name,
 team:team,
 score:0
 });
 
+document.querySelector(".card")
+.style.display = "none";
+
 document.getElementById("gameArea")
-.style.display = "block";
+.classList.remove("hidden");
 
 listenGame();
 listenTimer();
@@ -335,7 +370,7 @@ db,
 const player =
 playerSnapshot.val();
 
-update(
+await update(
 ref(
 db,
 'rooms/' + currentRoom + '/players/' + playerId
